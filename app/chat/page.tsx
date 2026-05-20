@@ -23,6 +23,7 @@ import {
   buildCueReactions,
   pickCueScripts,
   renderText,
+  type Category,
   type Phase,
   type ScriptLine,
 } from "@/lib/messages";
