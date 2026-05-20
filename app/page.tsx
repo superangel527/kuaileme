@@ -174,7 +174,7 @@ export default function HomePage() {
                 placeholder="點下面快速心情、或自己打一句…"
                 rows={3}
                 maxLength={30}
-                className="w-full resize-none rounded-2xl bg-bg-deep/90 border border-white/[0.14] px-4 py-3 text-[15px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink/70 focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
+                className="w-full resize-none rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3 text-[15px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
               />
               <span className="absolute right-3 bottom-2 text-[10.5px] text-white/35">
                 {topic.length}/30
@@ -218,7 +218,7 @@ export default function HomePage() {
                 maxLength={8}
                 autoComplete="off"
                 enterKeyHint="go"
-                className="w-full rounded-2xl bg-bg-deep/90 border border-white/[0.14] px-4 py-3 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-glow-pink/70 focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
+                className="w-full rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10.5px] text-white/35">
                 {nickname.length}/8
