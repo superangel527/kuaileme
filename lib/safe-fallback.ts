@@ -36,16 +36,16 @@ const THIRD_PERSON: string[] = [
 
 // @ 暱稱直接點名
 const MENTION: string[] = [
-  "@{n} 妳真的很棒 我說真的",
-  "@{n} 妳超有趣的耶",
+  "@{n} 你真的很棒 我說真的",
+  "@{n} 你超有趣的耶",
   "@{n} 不要太低估自己拜託",
-  "@{n} 妳被低估了",
-  "@{n} 妳那個樣子超可愛",
-  "@{n} 我覺得妳真的很特別",
-  "@{n} 妳整個人就是 很對",
-  "@{n} 真的別擔心 妳很好",
-  "@{n} 妳那種感覺 不是每個人都有",
-  "@{n} 妳值得更多耶",
+  "@{n} 你被低估了",
+  "@{n} 你那個樣子超可愛",
+  "@{n} 我覺得你真的很特別",
+  "@{n} 你整個人就是 很對",
+  "@{n} 真的別擔心 你很好",
+  "@{n} 你那種感覺 不是每個人都有",
+  "@{n} 你值得更多耶",
 ];
 
 // 短互動穿插句
@@ -110,9 +110,9 @@ export function buildSafeFallback(counts: {
 // Cue 反應句：使用者回完一句後、聊天室接話的安全句
 // 主要回應「她願意說出來」這件事、不沾具體內容
 const SAFE_CUE_REACTIONS: string[] = [
-  "@{n} 妳這樣講真的很真實",
-  "@{n} 我懂妳的感覺",
-  "@{n} 妳能講出來就已經很棒了",
+  "@{n} 你這樣講真的很真實",
+  "@{n} 我懂你的感覺",
+  "@{n} 你能講出來就已經很棒了",
   "她真的很勇敢 敢說這種話",
   "聽到她這樣講 我有點被觸到",
   "她那種坦白 真的很少見",
@@ -137,20 +137,20 @@ export function buildSafeCueReactions(count: number): ScriptLine[] {
 // Cue 卡安全題目（AI 沒生 Cue 時用）— 純情緒探詢、不沾具體話題
 const SAFE_CUES: { transition: string; question: string }[] = [
   {
-    transition: "@{n} 欸欸 我想直接問妳",
+    transition: "@{n} 欸欸 我想直接問你",
     question: "現在心情怎麼樣？",
   },
   {
-    transition: "@{n} 等一下 我想聽妳說一句",
-    question: "妳希望我們怎麼安慰妳？",
+    transition: "@{n} 等一下 我想聽你說一句",
+    question: "你希望我們怎麼安慰你？",
   },
   {
-    transition: "@{n} 大家都安靜了 想聽妳講一下",
-    question: "妳現在最想被誰看見？",
+    transition: "@{n} 大家都安靜了 想聽你講一下",
+    question: "你現在最想被誰看見？",
   },
   {
     transition: "@{n} 講一下嘛 我們在聽",
-    question: "妳最近最想對自己說什麼？",
+    question: "你最近最想對自己說什麼？",
   },
 ];
 

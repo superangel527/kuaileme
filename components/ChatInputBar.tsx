@@ -6,7 +6,7 @@ import { useState, useRef, FormEvent, KeyboardEvent } from "react";
 export default function ChatInputBar({
   onSend,
   disabled = false,
-  placeholder = "說點什麼、讓他們圍著妳…",
+  placeholder = "說點什麼、讓他們圍著你…",
 }: {
   onSend: (text: string) => void;
   disabled?: boolean;

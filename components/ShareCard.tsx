@@ -71,7 +71,8 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(
       ref={ref}
       style={{
         width: 540,
-        minHeight: 900,
+        // 不再用 minHeight: 900 — 改由外層用 ResizeObserver 動態抓 ShareCard
+        // 真實 render 高度、scale(0.6) 後外層 wrapper 剛好包住、避免下方空白
         background:
           "linear-gradient(180deg, #0b0b1a 0%, #15102b 35%, #1f1740 70%, #15102b 100%)",
         padding: "32px 28px 28px",

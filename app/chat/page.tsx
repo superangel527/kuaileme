@@ -83,12 +83,12 @@ const FAREWELL_LINES = [
 // idle ping 訊息池（沒打字時觸發、純圍繞她的存在）
 const IDLE_PING_LINES = [
   "@{n} 還在嗎",
-  "@{n} 妳怎麼了 在嗎",
+  "@{n} 你怎麼了 在嗎",
   "她是不是還在線啊",
   "我突然想知道 {n} 還好嗎",
   "@{n} 別躲後面看 講一句嘛",
   "{n} 是不是又在硬撐 不打字",
-  "@{n} 我們都在 妳講一下",
+  "@{n} 我們都在 你講一下",
   "她安靜了 心疼",
 ];
 
@@ -135,8 +135,12 @@ export default function ChatPage() {
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
   const [savingImage, setSavingImage] = useState(false);
-  // 保存圖片結果訊息：null / "success" / "error"（取代 alert、iOS 比較不會被 popup blocker 吃掉）
-  const [saveResult, setSaveResult] = useState<null | "success" | "error">(null);
+  // 保存圖片結果訊息：null / "success" / "ios"（已開新分頁、提示長按）/ "error"
+  const [saveResult, setSaveResult] = useState<
+    null | "success" | "ios" | "error"
+  >(null);
+  // ShareCard 真實 render 高度 * 0.6 — 動態算、避免外層容器有空白
+  const [cardWrapHeight, setCardWrapHeight] = useState(540);
 
   const sessionStartRef = useRef<number>(Date.now());
   const sessionDurationRef = useRef<number>(INITIAL_DURATION_MS);
@@ -456,6 +460,26 @@ export default function ChatPage() {
     scrollEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, [items.length, typings.length, ended]);
 
+  // ShareCard 高度監聽 — 動態算 wrapper 高度、避免下方空白
+  useEffect(() => {
+    if (!ended || typeof window === "undefined") return;
+    const el = shareCardRef.current;
+    if (!el) return;
+    const update = () => {
+      const h = el.offsetHeight;
+      if (h > 0) setCardWrapHeight(h * 0.6);
+    };
+    update();
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(update);
+      observer.observe(el);
+    }
+    return () => {
+      observer?.disconnect();
+    };
+  }, [ended]);
+
   // 愛心慢慢增加
   useEffect(() => {
     if (ended) return;
@@ -616,8 +640,8 @@ export default function ChatPage() {
       },
     ]);
 
-    // 熱身：丟 1 句直接 @ 妳「回來啦」
-    const warmupLine = `@${plan.nickname || "妳"} 妳回來啦 我們還在等妳`;
+    // 熱身：丟 1 句直接 @ 你「回來啦」
+    const warmupLine = `@${plan.nickname || "你"} 你回來啦 我們還在等你`;
     const warmupChar = pickAny(plan.chars);
     schedule(() => {
       setItems((arr) => [
@@ -744,19 +768,42 @@ export default function ChatPage() {
           setTimeout(() => reject(new Error("生圖超時")), 10000)
         ),
       ]);
-      const link = document.createElement("a");
-      const nick = plan?.nickname || "我";
-      link.download = `誇了嗎_${nick}_${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-      setSaveResult("success");
+
+      // iOS Safari 對動態 <a download> 不支援、會 navigate 而不下載
+      // 改成開新分頁、讓使用者長按存到相簿
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as { MSStream?: unknown }).MSStream;
+
+      if (isIOS) {
+        const win = window.open();
+        if (win) {
+          win.document.write(
+            `<html><head><title>誇了嗎 - 分享圖</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#0b0b1a;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;height:auto;display:block}p{position:fixed;top:12px;left:0;right:0;text-align:center;color:#fff;font-family:-apple-system,sans-serif;font-size:13px;background:rgba(0,0,0,0.5);padding:8px;margin:0}</style></head><body><p>長按圖片 → 儲存到相簿</p><img src="${dataUrl}" alt="誇了嗎分享圖" /></body></html>`
+          );
+          win.document.close();
+          setSaveResult("ios");
+        } else {
+          // popup blocked
+          setSaveResult("error");
+        }
+      } else {
+        // Desktop / Android — 用 <a download>
+        const link = document.createElement("a");
+        const nick = plan?.nickname || "我";
+        link.download = `誇了嗎_${nick}_${Date.now()}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setSaveResult("success");
+      }
     } catch (e) {
       console.error("[saveImage]", e);
       setSaveResult("error");
     } finally {
       setSavingImage(false);
-      // 5 秒後自動清掉提示
-      setTimeout(() => setSaveResult(null), 5000);
+      // 8 秒後自動清掉提示
+      setTimeout(() => setSaveResult(null), 8000);
     }
   };
 
@@ -874,14 +921,6 @@ export default function ChatPage() {
                 {extending ? "建立訂單中…" : "再聊 3 分鐘 NT$19"}
               </button>
 
-              {/* 次選項：明確「下次再誇吧」出口 */}
-              <button
-                onClick={handleReplay}
-                className="mt-2.5 w-full py-3 rounded-2xl text-white/70 text-[14px] font-medium hover:text-white bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] transition"
-              >
-                下次再誇吧
-              </button>
-
               {shareItems.length > 0 && (
                 <>
                   <div className="mt-7 text-center">
@@ -892,10 +931,14 @@ export default function ChatPage() {
                       ↓ 保存這張圖、跟朋友炫耀一下
                     </div>
                   </div>
-                  {/* ShareCard 預覽：540x900 原圖、用 overflow:hidden 容器裝、固定 324x540 視覺尺寸 */}
+                  {/* ShareCard 預覽：width 540 + scale(0.6)、wrapper 高度跟著 ShareCard 真實 render 算 */}
                   <div
                     className="mt-3 mb-2 mx-auto overflow-hidden rounded-2xl border border-white/[0.08]"
-                    style={{ width: 324, height: 540 }}
+                    style={{
+                      width: 324,
+                      height: cardWrapHeight,
+                      transition: "height 200ms ease-out",
+                    }}
                   >
                     <div
                       style={{
@@ -926,12 +969,17 @@ export default function ChatPage() {
                     {/* 保存結果提示 */}
                     {saveResult === "success" && (
                       <p className="mt-2 text-center text-[12px] text-glow-cyan animate-fade-in-up">
-                        ✓ 已下載、可分享到 IG / Threads
+                        ✓ 已下載、這些話值得保存下來
+                      </p>
+                    )}
+                    {saveResult === "ios" && (
+                      <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
+                        圖片已開新分頁、<strong>長按圖片</strong>選「儲存到相簿」
                       </p>
                     )}
                     {saveResult === "error" && (
                       <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
-                        產生圖片失敗、請**長按上方圖卡**存到相簿
+                        產生圖片失敗、請<strong>長按上方圖卡</strong>存到相簿
                       </p>
                     )}
                   </div>
@@ -958,7 +1006,7 @@ export default function ChatPage() {
           onSend={handleSend}
           disabled={sending}
           placeholder={
-            fading ? "聊天室慢慢安靜了…" : "說點什麼、讓他們圍著妳…"
+            fading ? "聊天室慢慢安靜了…" : "說點什麼、讓他們圍著你…"
           }
         />
       )}
