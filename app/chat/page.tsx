@@ -293,7 +293,8 @@ export default function ChatPage() {
 
     // Cue 點名：3 次 — 38s / 88s / 142s
     // 每次 cue 前 1.5s 先有人說一句鋪陳
-    const cueScripts = pickCueScripts(3);
+    // ✨ 傳 scenario 進去、Cue 問題就會圍繞主題
+    const cueScripts = pickCueScripts(3, scenario);
     const cueSchedule = [
       { id: "c1", at: 38000, transitionAt: 36500, ...cueScripts[0] },
       { id: "c2", at: 88000, transitionAt: 86500, ...cueScripts[1] },

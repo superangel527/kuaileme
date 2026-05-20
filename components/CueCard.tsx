@@ -71,7 +71,7 @@ export default function CueCard({
               autoComplete="off"
               enterKeyHint="send"
               placeholder="只回一句就好…"
-              className="w-full rounded-xl bg-bg-deep/60 border border-white/[0.12] px-3.5 py-2.5 text-[14.5px] text-white placeholder-white/35 focus:outline-none focus:border-glow-pink/60 transition"
+              className="w-full rounded-xl bg-bg-deep/70 border-2 border-glow-pink/45 px-3.5 py-2.5 text-[14.5px] text-white placeholder-white/40 focus:outline-none focus:border-glow-pink transition"
             />
             <button
               type="submit"
