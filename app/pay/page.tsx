@@ -168,7 +168,7 @@ export default function PayPage() {
         <div className="mt-5 relative rounded-2xl bg-bg-card/60 border border-white/[0.08] overflow-hidden">
           <div className="px-4 pt-3 pb-2 border-b border-white/5 flex items-center justify-between">
             <div className="text-[12.5px] font-medium text-white/85">
-              # 深夜誇誇
+              #誇了嗎
             </div>
             <div className="text-[10.5px] text-white/50 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-glow" />
@@ -194,7 +194,7 @@ export default function PayPage() {
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-bg-deep/95 via-bg-deep/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-3 flex justify-center pointer-events-none">
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11.5px] text-white/85">
-              🔒 付款後才能看清楚他們在聊什麼
+              🔒 付款後，才能偷偷看他們怎麼聊你
             </div>
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function PayPage() {
           disabled={paying}
           className="mt-6 w-full py-5 rounded-2xl text-white text-[19px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_12px_40px_-8px_rgba(255,95,162,0.6)] active:scale-[0.98] disabled:opacity-60 transition flex items-center justify-center gap-3"
         >
-          確認付款 NT$19
+          NT$19 偷偷進聊天室
         </button>
 
         <p className="mt-3 text-center text-[11px] text-white/40">
