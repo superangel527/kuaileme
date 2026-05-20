@@ -17,9 +17,7 @@ export const metadata: Metadata = {
     description: "你真好！現在有 100 個人正在聊天室討論你喔",
     images: [
       {
-        url: "/logo.png",
-        width: 2508,
-        height: 2508,
+        url: "/logo.jpg",
         alt: "誇了嗎",
       },
     ],
@@ -29,7 +27,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "誇了嗎",
     description: "你真好！現在有 100 個人正在聊天室討論你喔",
-    images: ["/logo.png"],
+    images: ["/logo.jpg"],
   },
 };
 

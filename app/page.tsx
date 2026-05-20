@@ -51,29 +51,17 @@ const QUICK_TOPICS = [
   { emoji: "🫂", text: "我其實很想有人抱抱我" },
 ];
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 export default function HomePage() {
   const router = useRouter();
   const [topic, setTopic] = useState("");
   const [nickname, setNickname] = useState("");
   const [going, setGoing] = useState(false);
-  // 深夜時間 + 兩個偷聽到的聊天碎片（mount 後才產，避免 hydration mismatch）
-  const [time, setTime] = useState<string | null>(null);
-  const [ghosts, setGhosts] = useState<{ text: string; ago: number }[]>([]);
+  // 兩個聊天室殘影（mount 後才產，避免 hydration mismatch）
+  const [ghosts, setGhosts] = useState<{ text: string }[]>([]);
 
   useEffect(() => {
-    // 深夜時段：00:00 ~ 03:59 隨機
-    const h = Math.floor(Math.random() * 4);
-    const m = Math.floor(Math.random() * 60);
-    setTime(`${pad(h)}:${pad(m)}`);
-
-    // 隨機抽兩個 ghost snippet，「X 秒前」
     const shuffled = [...GHOST_SNIPPETS].sort(() => Math.random() - 0.5);
-    setGhosts([
-      { text: shuffled[0], ago: 4 + Math.floor(Math.random() * 12) },
-      { text: shuffled[1], ago: 10 + Math.floor(Math.random() * 18) },
-    ]);
+    setGhosts([{ text: shuffled[0] }, { text: shuffled[1] }]);
   }, []);
 
   const canEnter =
@@ -97,51 +85,43 @@ export default function HomePage() {
       <BottomGlow />
 
       <div className="max-w-md mx-auto">
-        {/* 頂部 — 左：深夜時鐘 / 右：已隱身 */}
-        <div className="flex items-center justify-between mb-6 px-1">
-          <div className="text-[11px] text-white/40 tabular-nums tracking-wide">
-            🌙 深夜 {time ?? "02:00"}
-          </div>
-          <div className="inline-flex items-center gap-1.5 text-[10.5px] text-white/55">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-glow" />
-            已隱身
-          </div>
-        </div>
-
-        {/* Logo */}
-        <div className="flex justify-center pb-2">
+        {/* Logo — 放大 1.5x */}
+        <div className="flex justify-center pt-2 pb-2">
           <img
             src="/logo.png"
             alt="誇了嗎"
-            className="w-[80px] h-auto drop-shadow-[0_6px_20px_rgba(255,95,162,0.3)]"
+            className="w-[120px] h-auto drop-shadow-[0_8px_24px_rgba(255,95,162,0.35)]"
           />
         </div>
 
-        {/* H1 + 偷聽到的碎片飄在周圍 */}
-        <div className="relative pt-10 pb-1">
+        {/* H1 + 殘影 — 模糊到像背景 */}
+        <div className="relative pt-6 pb-1">
+          {/* 兩個 ghost 訊息變成「聊天室背景殘影」— 重模糊、極淡 */}
           {ghosts[0] && (
             <div
-              className="absolute top-0 left-0 max-w-[150px] animate-drift"
-              style={{ animationDelay: "0s" }}
+              aria-hidden
+              className="absolute -top-1 left-2 max-w-[170px] select-none pointer-events-none"
+              style={{
+                opacity: 0.18,
+                filter: "blur(3px)",
+              }}
             >
-              <div className="text-[11px] text-white/45 italic leading-snug">
+              <div className="text-[13px] text-white italic leading-snug">
                 「{ghosts[0].text}」
-              </div>
-              <div className="text-[9.5px] text-white/25 mt-0.5">
-                · {ghosts[0].ago} 秒前
               </div>
             </div>
           )}
           {ghosts[1] && (
             <div
-              className="absolute top-1 right-0 max-w-[160px] text-right animate-drift"
-              style={{ animationDelay: "1.4s" }}
+              aria-hidden
+              className="absolute top-2 right-2 max-w-[170px] text-right select-none pointer-events-none"
+              style={{
+                opacity: 0.16,
+                filter: "blur(3px)",
+              }}
             >
-              <div className="text-[11px] text-white/45 italic leading-snug">
+              <div className="text-[13px] text-white italic leading-snug">
                 「{ghosts[1].text}」
-              </div>
-              <div className="text-[9.5px] text-white/25 mt-0.5">
-                · {ghosts[1].ago} 秒前
               </div>
             </div>
           )}
@@ -155,6 +135,13 @@ export default function HomePage() {
             </span>
             。
           </h1>
+
+          {/* 新加的「危險偷看感」副標 */}
+          <p className="mt-4 text-center text-[14px] text-white/65 italic leading-relaxed">
+            聊天室裡，
+            <br className="sm:hidden" />
+            <span className="text-white/85">已經有人開始替你說話了。</span>
+          </p>
         </div>
 
         {/* 三行 whisper（從橫排 pill 改成直排 whisper，更像偷聽到的） */}
@@ -178,7 +165,7 @@ export default function HomePage() {
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-glow-pink to-glow-violet text-[11px] font-semibold">
                 1
               </span>
-              偷偷說一句你現在的心情
+              丟一句話，看他們會怎麼聊你
             </label>
             <div className="relative">
               <textarea
