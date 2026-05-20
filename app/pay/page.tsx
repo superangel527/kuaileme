@@ -67,6 +67,11 @@ export default function PayPage() {
     setLoadingSteps(pickLoadingSteps());
   }, [router]);
 
+  // 付款模式開關：
+  //   NEXT_PUBLIC_PAYMENT_MODE=payuni → 真實 PayUni（PayUni 審核通過後才設）
+  //   NEXT_PUBLIC_PAYMENT_MODE=fake 或沒設 → 假流程（loading 後直接進 chat）
+  const paymentMode = process.env.NEXT_PUBLIC_PAYMENT_MODE || "fake";
+
   const handlePay = async () => {
     if (paying) return;
     setPaying(true);
@@ -85,7 +90,7 @@ export default function PayPage() {
       localStorage.removeItem("kl_paid_at");
     }
 
-    // 1. 先呼叫 AI prepare-session（不等、fire and forget — 使用者付完跳回 chat 時應該已經回來）
+    // 先呼叫 AI prepare-session（不等、fire and forget）
     if (topic) {
       fetch("/api/prepare-session", {
         method: "POST",
@@ -102,41 +107,55 @@ export default function PayPage() {
         .catch(() => {});
     }
 
-    // 2. 呼叫 PayUni create-order 拿到要 POST 的表單欄位
-    try {
-      const resp = await fetch("/api/payuni/create-order", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ nickname: nick, topic }),
-      });
-      const data = await resp.json();
+    // 走真實 PayUni 流程
+    if (paymentMode === "payuni") {
+      try {
+        const resp = await fetch("/api/payuni/create-order", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ nickname: nick, topic }),
+        });
+        const data = await resp.json();
 
-      if (!data?.ok || !data?.actionUrl || !data?.fields) {
-        throw new Error(data?.error || "建單失敗");
-      }
+        if (!data?.ok || !data?.actionUrl || !data?.fields) {
+          throw new Error(data?.error || "建單失敗");
+        }
 
-      // 3. 動態生表單、自動 submit 跳轉 PayUni 結帳頁
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = data.actionUrl;
-      form.style.display = "none";
-      for (const [key, value] of Object.entries(data.fields)) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = data.actionUrl;
+        form.style.display = "none";
+        for (const [key, value] of Object.entries(data.fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      } catch (e) {
+        alert(
+          "付款建單失敗：" +
+            (e instanceof Error ? e.message : String(e)) +
+            "\n請通知客服或稍後再試。"
+        );
+        setPaying(false);
+        return;
       }
-      document.body.appendChild(form);
-      form.submit();
-    } catch (e) {
-      alert(
-        "付款建單失敗：" +
-          (e instanceof Error ? e.message : String(e)) +
-          "\n請通知客服或稍後再試。"
-      );
-      setPaying(false);
     }
+
+    // 假流程：loading 後直接寫 paid_at + 跳 /chat
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kl_paid_at", String(Date.now()));
+    }
+    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(1), 900));
+    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 1900));
+    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(3), 3000));
+    payTimeoutsRef.current.push(
+      setTimeout(() => router.replace("/chat"), 4500)
+    );
   };
 
   if (paying) {
