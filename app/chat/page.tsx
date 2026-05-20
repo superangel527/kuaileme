@@ -18,6 +18,7 @@ import {
 // pickByGender/pickAny 仍用於 assign()，請勿刪除上方
 import CueCard from "@/components/CueCard";
 import UserReply from "@/components/UserReply";
+import ShareCard, { type ShareMsg } from "@/components/ShareCard";
 import {
   buildScript,
   buildCueReactions,
@@ -148,6 +149,8 @@ export default function ChatPage() {
   const [ended, setEnded] = useState(false);
   const [mounted, setMounted] = useState(false);
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
+  const [savingImage, setSavingImage] = useState(false);
 
   // 所有 setTimeout 都登記到這個 ref — 結尾 / unmount 一次清光
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -491,6 +494,54 @@ export default function ChatPage() {
     router.push("/");
   };
 
+  // 從本場訊息挑出 3-4 則最高愛心、適合分享的（排除短插話、廢話）
+  const shareItems: ShareMsg[] = useMemo(() => {
+    if (!ended || !plan) return [];
+    const trashStart = /^(\+|笑死|靠|哈哈|對對|對啊|蛤|懂|認同|心疼|幹|真的)/;
+    const candidates = items
+      .filter((it): it is MsgItem => it.kind === "msg")
+      .filter((m) => m.text.length >= 10) // 排除太短
+      .filter((m) => !trashStart.test(m.text.replace(/^@\S+\s*/, ""))) // 排除短插話
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, 4)
+      .map((m) => ({ char: m.char, text: m.text, likeCount: m.likeCount }));
+    return candidates;
+  }, [ended, items, plan]);
+
+  const totalLikes = useMemo(() => {
+    if (!ended) return 0;
+    return items
+      .filter((it): it is MsgItem => it.kind === "msg")
+      .reduce((sum, m) => sum + m.likeCount, 0);
+  }, [ended, items]);
+
+  const mainQuote = shareItems[0]?.text ?? "你真是一位有趣的人";
+  const mainQuoteAuthor = shareItems[0]?.char.name ?? "小桃";
+
+  const handleSaveImage = async () => {
+    if (savingImage || !shareCardRef.current) return;
+    setSavingImage(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(shareCardRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: "#0b0b1a",
+      });
+      const link = document.createElement("a");
+      const nick = plan?.nickname || "我";
+      link.download = `誇了嗎_${nick}_${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      // 萬一失敗、提示使用者長按存圖
+      alert("產生圖片失敗、請長按下方圖卡存到相簿");
+      console.error(e);
+    } finally {
+      setSavingImage(false);
+    }
+  };
+
   const handleHome = () => router.push("/");
 
   const handleCueAnswer = (cueId: string, text: string) => {
@@ -656,18 +707,69 @@ export default function ChatPage() {
           })}
 
           {ended && (
-            <div className="pt-4 pb-2 text-center animate-fade-in-up">
-              <div className="text-[13px] text-white/45">
-                聊天室慢慢安靜下來了……
+            <div className="pt-5 pb-2 animate-fade-in-up">
+              {/* 大標 */}
+              <div className="text-center mb-1">
+                <div className="text-[12.5px] text-white/45 mb-1">
+                  聊天室慢慢安靜下來了……
+                </div>
+                <h2 className="text-[20px] sm:text-[22px] text-white font-bold leading-snug">
+                  聊天室裡，
+                  <br />
+                  好像
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan">
+                    還有人想繼續聊你
+                  </span>
+                  。
+                </h2>
+                <p className="mt-1.5 text-[11.5px] text-white/40">
+                  ✨ 聊天室裡，有幾句話被很多人按了愛心
+                </p>
               </div>
-              <div className="mt-2 text-[16px] text-white font-medium leading-relaxed">
-                聊天室裡，
-                <br />
-                好像還有人想繼續聊你。
+
+              {/* ShareCard 預覽 — 縮放 */}
+              {shareItems.length > 0 && (
+                <div className="mt-4 mb-3 flex justify-center">
+                  <div
+                    style={{
+                      transform: "scale(0.6)",
+                      transformOrigin: "top center",
+                      width: 540,
+                      marginBottom: -360,
+                    }}
+                  >
+                    <ShareCard
+                      ref={shareCardRef}
+                      nickname={plan?.nickname || "你"}
+                      mainQuote={mainQuote}
+                      mainQuoteAuthor={mainQuoteAuthor}
+                      messages={shareItems}
+                      totalLikes={totalLikes}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 兩個按鈕 */}
+              <div className="mt-4 space-y-2.5">
+                <button
+                  onClick={handleSaveImage}
+                  disabled={savingImage || shareItems.length === 0}
+                  className="w-full py-3.5 rounded-2xl text-white text-[15.5px] font-semibold bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_10px_30px_-8px_rgba(255,95,162,0.55)] active:scale-[0.98] disabled:opacity-60 transition flex items-center justify-center gap-2"
+                >
+                  {savingImage ? "正在產生圖片…" : "📥 保存分享圖"}
+                </button>
+                <button
+                  onClick={handleReplay}
+                  className="w-full py-3.5 rounded-2xl text-white/95 text-[15.5px] font-medium bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.1] active:scale-[0.98] transition"
+                >
+                  💬 換一句心情再被討論
+                </button>
               </div>
-              <div className="mt-2 text-[11.5px] text-white/35">
-                換一句新心情、會進入另一個聊天室
-              </div>
+
+              <p className="mt-3 text-center text-[11px] text-white/35">
+                長按圖片也可以直接存到相簿
+              </p>
             </div>
           )}
 
@@ -675,11 +777,10 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* 底部 — 不開放發言 / 結尾變解鎖 CTA */}
-      <ChatInputBar
-        mode={ended ? "locked" : "passive"}
-        onUnlock={handleReplay}
-      />
+      {/* 底部 — 結尾時隱藏（ShareCard 上方已有按鈕） */}
+      {!ended && (
+        <ChatInputBar mode="passive" onUnlock={handleReplay} />
+      )}
     </main>
   );
 }
