@@ -57,18 +57,24 @@ export default function PayPage() {
     setPaying(true);
     if (typeof window !== "undefined") {
       localStorage.setItem("kl_paid_at", String(Date.now()));
-      // 趁 loading 期間先把 scenario 算好（fire and forget）
+      // 趁 loading 期間呼叫 AI 定調 + 生成爆發期/收尾訊息
       const topic = localStorage.getItem("kl_topic") || "";
+      const nickname = localStorage.getItem("kl_nickname") || "";
+      // 清掉上一場的 prepared（避免吃舊資料）
+      localStorage.removeItem("kl_prepared");
+      localStorage.removeItem("kl_scenario");
       if (topic) {
-        fetch("/api/classify", {
+        fetch("/api/prepare-session", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text: topic }),
+          body: JSON.stringify({ text: topic, nickname }),
         })
-          .then((r) => (r.ok ? r.json() : { scenario: "unknown" }))
+          .then((r) => (r.ok ? r.json() : null))
           .then((d) => {
-            if (d?.scenario) {
-              localStorage.setItem("kl_scenario", d.scenario);
+            if (d?.topic) {
+              localStorage.setItem("kl_prepared", JSON.stringify(d));
+              // 保留 kl_scenario 給 chat 頁快速讀取
+              localStorage.setItem("kl_scenario", d.topic);
             }
           })
           .catch(() => {
@@ -76,10 +82,11 @@ export default function PayPage() {
           });
       }
     }
+    // loading 拉長到 3.5s — 給 AI 多一點時間回應、但太久也直接進
     payTimeoutsRef.current.push(setTimeout(() => setStepIdx(1), 900));
-    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 1800));
+    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 2000));
     payTimeoutsRef.current.push(
-      setTimeout(() => router.replace("/chat"), 2700)
+      setTimeout(() => router.replace("/chat"), 3500)
     );
   };
 

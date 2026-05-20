@@ -173,26 +173,73 @@ export default function ChatPage() {
       (typeof window !== "undefined"
         ? localStorage.getItem("kl_topic")
         : "") || "";
-    // 優先用 pay 頁面 fetch /api/classify 算好存的 scenario
-    // 沒有就用 keyword fallback
-    const storedScenario =
-      typeof window !== "undefined"
-        ? localStorage.getItem("kl_scenario")
-        : null;
+
+    // 讀取 pay 頁存的 AI prepared session（topic + earlyMessages + hearts）
+    type AIMsg = { text: string; gender: "M" | null };
+    let prepared: {
+      topic?: string;
+      earlyMessages?: AIMsg[];
+      hearts?: AIMsg[];
+      tone?: string;
+      keywords?: string[];
+    } | null = null;
+    try {
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem("kl_prepared")
+          : null;
+      if (raw) prepared = JSON.parse(raw);
+    } catch {
+      prepared = null;
+    }
+
+    // scenario 優先 AI 判定、其次關鍵字
     const scenario: ScenarioKey =
-      storedScenario && (ALL_SCENARIO_KEYS as string[]).includes(storedScenario)
-        ? (storedScenario as ScenarioKey)
+      prepared?.topic && (ALL_SCENARIO_KEYS as string[]).includes(prepared.topic)
+        ? (prepared.topic as ScenarioKey)
         : detectScenarioByKeywords(topic);
-    const lines = buildScript(scenario, COUNTS);
+
+    // AI 生的 early/hearts 數量
+    const aiEarly = prepared?.earlyMessages ?? [];
+    const aiHearts = prepared?.hearts ?? [];
+    const aiEarlyCount = Math.min(aiEarly.length, COUNTS.early);
+    const aiHeartsCount = Math.min(aiHearts.length, 2);
+
+    // 池子要補的數量
+    const fillCounts = {
+      early: Math.max(0, COUNTS.early - aiEarlyCount),
+      mid: COUNTS.mid,
+      late: Math.max(0, COUNTS.late - aiHeartsCount),
+    };
+    const poolLines = buildScript(scenario, fillCounts);
+
+    // AI lines 轉成 ScriptLine 格式
+    const aiToLine = (m: AIMsg, phase: Phase, category: Category): ScriptLine => {
+      const line: ScriptLine = { text: m.text, category, phase };
+      if (m.gender === "M") line.requiresGender = "M";
+      return line;
+    };
+
+    // 早段：AI 先 + 池子補
+    const earlyLines: ScriptLine[] = [
+      ...aiEarly.slice(0, aiEarlyCount).map((m) => aiToLine(m, "early", "praise")),
+      ...poolLines.filter((l) => l.phase === "early"),
+    ];
+    // 中段：純池子
+    const midLines = poolLines.filter((l) => l.phase === "mid");
+    // 後段：池子戳心 + AI 戳心放在最後（最深的那兩句留給 AI）
+    const lateLines: ScriptLine[] = [
+      ...poolLines.filter((l) => l.phase === "late"),
+      ...aiHearts
+        .slice(0, aiHeartsCount)
+        .map((m) => aiToLine(m, "late", "heart_pierce")),
+    ];
 
     // 抽 16 個角色用（夠多樣）
     const chars = pickRandomCharacters(Math.min(16, CHARACTERS.length));
 
     // 配角色：男生視角必須給男角；其他輪替＋避免同一人連續
     let lastCharId: string | null = null;
-    const earlyLines = lines.filter((l) => l.phase === "early");
-    const midLines = lines.filter((l) => l.phase === "mid");
-    const lateLines = lines.filter((l) => l.phase === "late");
 
     function assign(ls: ScriptLine[]) {
       return ls.map((line) => {

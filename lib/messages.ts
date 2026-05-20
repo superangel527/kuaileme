@@ -610,7 +610,7 @@ const CUE_QUESTION_POOL: string[] = [
   "{n}，妳上一次大哭是什麼時候？",
   "{n}，妳最近最累的是哪件事？",
   "{n}，妳今天最希望聽到誰跟妳說一句話？",
-  "{n}，如果可以躺著什麼都不做、妳會選什麼時候？",
+  "{n}，如果現在可以好好休息一下，妳最想逃去哪裡？",
 ];
 
 export type CueScript = { question: string; transition: string };
