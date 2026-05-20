@@ -68,7 +68,7 @@ type Typing = { id: string; char: Character };
 // ─────────────────────────────────────
 
 const INITIAL_DURATION_MS = 180_000; // 第一場 3 分鐘
-const EXTEND_DURATION_MS = 600_000; // 續聊 10 分鐘
+const EXTEND_DURATION_MS = 180_000; // 續聊 3 分鐘（跟首場一致、心理門檻低、連續小額更易上癮）
 const FADE_DURATION_MS = 18_000; // 「慢慢安靜」末段
 const IDLE_PING_AFTER_MS = 25_000; // 使用者沒打字 25 秒才 ping
 const IDLE_PING_COOLDOWN_MS = 20_000; // ping 完至少再隔 20 秒才下一次
@@ -279,7 +279,7 @@ export default function ChatPage() {
   }, [router]);
 
   // ─────────────────────────────────────
-  // PayUni return：?extend=1 → 延長 10 分鐘
+  // PayUni return：?extend=1 → 延長 3 分鐘
   // ─────────────────────────────────────
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -576,7 +576,7 @@ export default function ChatPage() {
   };
 
   // ─────────────────────────────────────
-  // handleExtend: 「再聊 10 分鐘 NT$19」→ 走付款流程
+  // handleExtend: 「再聊 3 分鐘 NT$19」→ 走付款流程
   // ─────────────────────────────────────
   // 註：PayUni 真金流續聊待 PayUni 過審後再做、現在用 fake 流程
   const handleExtend = async () => {
@@ -587,7 +587,7 @@ export default function ChatPage() {
     extendSession();
   };
 
-  // 真的延長聊天室 — 不 reset、原 items 保留、+10 分鐘新流程
+  // 真的延長聊天室 — 不 reset、原 items 保留、+3 分鐘新流程
   const extendSession = () => {
     if (!plan) return;
     clearAllTimeouts();
@@ -849,15 +849,15 @@ export default function ChatPage() {
                 disabled={extending}
                 className="w-full py-4 rounded-2xl text-white text-[16px] font-bold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_12px_36px_-8px_rgba(255,95,162,0.65)] active:scale-[0.98] disabled:opacity-60 transition flex items-center justify-center gap-2"
               >
-                {extending ? "建立訂單中…" : "再聊 10 分鐘 NT$19"}
+                {extending ? "建立訂單中…" : "再聊 3 分鐘 NT$19"}
               </button>
 
-              {/* 次選項：不續了 — 跟主 CTA 同一視覺層級、明確讓使用者看到出口 */}
+              {/* 次選項：明確「下次再誇吧」出口 */}
               <button
                 onClick={handleReplay}
-                className="mt-2.5 w-full py-3 rounded-2xl text-white/65 text-[13.5px] hover:text-white/90 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition"
+                className="mt-2.5 w-full py-3 rounded-2xl text-white/70 text-[14px] font-medium hover:text-white bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] transition"
               >
-                先不續了 · 換一個心情重新開始
+                下次再誇吧
               </button>
 
               {shareItems.length > 0 && (
