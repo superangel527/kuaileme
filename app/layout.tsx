@@ -4,24 +4,31 @@ import Starfield from "@/components/Starfield";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://kuaileme.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://kuaileme.superangel527.com"
   ),
-  title: "誇了嗎・來聊天・被誇誇・超開心",
-  description: "今天有 100 個人正在聊天室裡誇你。",
+  title: "誇了嗎",
+  description: "你真好！現在有 100 個人正在聊天室討論你喔",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
   },
   openGraph: {
     title: "誇了嗎",
-    description: "今天有 100 個人正在聊天室裡誇你。",
-    images: ["/logo.png"],
+    description: "你真好！現在有 100 個人正在聊天室討論你喔",
+    images: [
+      {
+        url: "/logo.png",
+        width: 2508,
+        height: 2508,
+        alt: "誇了嗎",
+      },
+    ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "誇了嗎",
-    description: "今天有 100 個人正在聊天室裡誇你。",
+    description: "你真好！現在有 100 個人正在聊天室討論你喔",
     images: ["/logo.png"],
   },
 };
