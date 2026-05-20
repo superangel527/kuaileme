@@ -83,15 +83,15 @@ export default function PayPage() {
     setLoadingTexts(
       [...LOADING_TEXT_POOL].sort(() => Math.random() - 0.5).slice(0, 4)
     );
-    // 生 8 個殘影 — 隨機散落、不同延遲與週期
+    // 生 6 個殘影 — 只飄在上半部、避開底部的進度條 / 文字 / 小提醒區
     const shuffled = [...GHOST_SNIPPETS].sort(() => Math.random() - 0.5);
     setGhosts(
-      Array.from({ length: 8 }, (_, i) => ({
+      Array.from({ length: 6 }, (_, i) => ({
         text: shuffled[i % shuffled.length],
-        left: 5 + Math.random() * 90, // 5-95% 寬
-        top: 8 + Math.random() * 78, // 8-86% 高
-        delay: Math.random() * 6, // 0-6s 延遲
-        dur: 9 + Math.random() * 6, // 9-15s 動畫週期
+        left: 8 + Math.random() * 84, // 8-92% 寬
+        top: 5 + Math.random() * 45, // 5-50% 高（只飄上半、不擋進度條）
+        delay: Math.random() * 6,
+        dur: 10 + Math.random() * 5,
       }))
     );
   }, [router]);

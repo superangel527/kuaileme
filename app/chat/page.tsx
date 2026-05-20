@@ -135,6 +135,8 @@ export default function ChatPage() {
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
   const [savingImage, setSavingImage] = useState(false);
+  // 保存圖片結果訊息：null / "success" / "error"（取代 alert、iOS 比較不會被 popup blocker 吃掉）
+  const [saveResult, setSaveResult] = useState<null | "success" | "error">(null);
 
   const sessionStartRef = useRef<number>(Date.now());
   const sessionDurationRef = useRef<number>(INITIAL_DURATION_MS);
@@ -683,13 +685,21 @@ export default function ChatPage() {
   // ─────────────────────────────────────
   // ShareCard 資料
   // ─────────────────────────────────────
+  // 排除：戳心收尾（fa-/fae-）、idle ping（ip-）、續聊熱身（rw-）、純插話開頭
+  // 這些放分享圖會感覺「沒誇我」、Angel 反饋過
+  const isShareWorthy = (m: MsgItem): boolean => {
+    if (/^(fa-|fae-|ip-|rw-)/.test(m.id)) return false; // 系統 / 收尾 / 閒置
+    if (m.text.length < 10) return false; // 太短
+    const trashStart = /^(\+|笑死|靠|哈哈|對對|對啊|蛤|懂|認同|心疼|幹|真的)/;
+    if (trashStart.test(m.text.replace(/^@\S+\s*/, ""))) return false; // 純插話
+    return true;
+  };
+
   const shareItems: ShareMsg[] = useMemo(() => {
     if (!ended || !plan) return [];
-    const trashStart = /^(\+|笑死|靠|哈哈|對對|對啊|蛤|懂|認同|心疼|幹|真的)/;
     return items
       .filter((it): it is MsgItem => it.kind === "msg")
-      .filter((m) => m.text.length >= 10)
-      .filter((m) => !trashStart.test(m.text.replace(/^@\S+\s*/, "")))
+      .filter(isShareWorthy)
       .sort((a, b) => b.likeCount - a.likeCount)
       .slice(0, 3)
       .map((m) => ({ char: m.char, text: m.text, likeCount: m.likeCount }));
@@ -702,12 +712,14 @@ export default function ChatPage() {
       .reduce((sum, m) => sum + m.likeCount, 0);
   }, [ended, items]);
 
-  // 主金句 — 拿愛心最高、長度 ≥ 8、非 @ 開頭的（更通用、更像「箴言」）
+  // 主金句 — 拿「直球誇」的最高愛心句（過濾戳心收尾、純插話、太短）
   const mainQuoteData = useMemo(() => {
     if (!ended) return { text: "你真是一位有趣的人", author: "小桃" };
     const cands = items
       .filter((it): it is MsgItem => it.kind === "msg")
-      .filter((m) => m.text.length >= 8 && !m.text.startsWith("@"))
+      .filter(isShareWorthy)
+      // 主金句優先選**非 @ 開頭**的（更通用、像箴言）
+      .filter((m) => !m.text.startsWith("@"))
       .sort((a, b) => b.likeCount - a.likeCount);
     return {
       text: cands[0]?.text ?? "你真是一位有趣的人",
@@ -718,23 +730,33 @@ export default function ChatPage() {
   const handleSaveImage = async () => {
     if (savingImage || !shareCardRef.current) return;
     setSavingImage(true);
+    setSaveResult(null);
     try {
       const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(shareCardRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: "#0b0b1a",
-      });
+      // 加 10 秒 timeout、避免 iOS Safari 上 toPng hang 住
+      const dataUrl = await Promise.race([
+        toPng(shareCardRef.current, {
+          pixelRatio: 2,
+          cacheBust: true,
+          backgroundColor: "#0b0b1a",
+        }),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error("生圖超時")), 10000)
+        ),
+      ]);
       const link = document.createElement("a");
       const nick = plan?.nickname || "我";
       link.download = `誇了嗎_${nick}_${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
+      setSaveResult("success");
     } catch (e) {
-      alert("產生圖片失敗、請長按下方圖卡存到相簿");
-      console.error(e);
+      console.error("[saveImage]", e);
+      setSaveResult("error");
     } finally {
       setSavingImage(false);
+      // 5 秒後自動清掉提示
+      setTimeout(() => setSaveResult(null), 5000);
     }
   };
 
@@ -901,7 +923,26 @@ export default function ChatPage() {
                     >
                       {savingImage ? "正在產生圖片…" : "📥 保存分享圖"}
                     </button>
+                    {/* 保存結果提示 */}
+                    {saveResult === "success" && (
+                      <p className="mt-2 text-center text-[12px] text-glow-cyan animate-fade-in-up">
+                        ✓ 已下載、可分享到 IG / Threads
+                      </p>
+                    )}
+                    {saveResult === "error" && (
+                      <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
+                        產生圖片失敗、請**長按上方圖卡**存到相簿
+                      </p>
+                    )}
                   </div>
+
+                  {/* 底部明確離開按鈕 — Angel 反饋過「不知道怎麼回首頁」、雙重保險 */}
+                  <button
+                    onClick={handleReplay}
+                    className="mt-6 w-full py-3 rounded-2xl text-white/75 text-[14px] font-medium hover:text-white bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08] active:scale-[0.98] transition flex items-center justify-center gap-2"
+                  >
+                    ← 結束聊天、回首頁
+                  </button>
                 </>
               )}
             </div>

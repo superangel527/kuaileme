@@ -50,9 +50,10 @@ export default function ChatInputBar({
   return (
     <form
       onSubmit={handleSubmit}
-      className="shrink-0 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-white/5 bg-bg-deep/92 backdrop-blur-md"
+      // 加大底部 padding、避免在 iOS 上被 home indicator / 系統手勢區誤觸
+      className="shrink-0 px-3 pt-3 pb-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.5rem))] border-t border-white/5 bg-bg-deep/92 backdrop-blur-md"
     >
-      <div className="flex items-end gap-2 max-w-md mx-auto">
+      <div className="flex items-end gap-2.5 max-w-md mx-auto">
         <textarea
           ref={inputRef}
           value={text}
@@ -62,14 +63,14 @@ export default function ChatInputBar({
           placeholder={placeholder}
           disabled={disabled}
           aria-label="輸入訊息"
-          className="flex-1 resize-none rounded-2xl bg-white/[0.06] border border-white/[0.1] px-4 py-2.5 text-[14px] text-white placeholder:text-white/35 leading-snug focus:outline-none focus:border-glow-pink/50 focus:ring-1 focus:ring-glow-pink/30 transition disabled:opacity-50"
-          style={{ maxHeight: "120px", minHeight: "42px" }}
+          className="flex-1 resize-none rounded-2xl bg-white/[0.06] border border-white/[0.1] px-4 py-3 text-[15px] text-white placeholder:text-white/35 leading-snug focus:outline-none focus:border-glow-pink/50 focus:ring-1 focus:ring-glow-pink/30 transition disabled:opacity-50"
+          style={{ maxHeight: "120px", minHeight: "48px" }}
         />
         <button
           type="submit"
           disabled={!text.trim() || sending || disabled}
           aria-label="送出"
-          className="shrink-0 w-[42px] h-[42px] rounded-full bg-gradient-to-br from-glow-pink via-glow-violet to-glow-cyan flex items-center justify-center text-white text-[18px] font-bold shadow-[0_4px_18px_-4px_rgba(255,95,162,0.55)] active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          className="shrink-0 w-[48px] h-[48px] rounded-full bg-gradient-to-br from-glow-pink via-glow-violet to-glow-cyan flex items-center justify-center text-white text-[20px] font-bold shadow-[0_4px_18px_-4px_rgba(255,95,162,0.55)] active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed transition"
         >
           ↑
         </button>

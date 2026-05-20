@@ -28,6 +28,7 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(
       ref={ref}
       style={{
         width: 540,
+        minHeight: 900, // 固定 540x900 設計尺寸、避免 scale 後外層留空白
         background:
           "linear-gradient(180deg, #0b0b1a 0%, #15102b 35%, #1f1740 70%, #15102b 100%)",
         padding: "32px 28px 28px",
