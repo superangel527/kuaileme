@@ -852,18 +852,34 @@ export default function ChatPage() {
                 {extending ? "建立訂單中…" : "再聊 10 分鐘 NT$19"}
               </button>
 
+              {/* 次選項：不續了 — 跟主 CTA 同一視覺層級、明確讓使用者看到出口 */}
+              <button
+                onClick={handleReplay}
+                className="mt-2.5 w-full py-3 rounded-2xl text-white/65 text-[13.5px] hover:text-white/90 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] transition"
+              >
+                先不續了 · 換一個心情重新開始
+              </button>
+
               {shareItems.length > 0 && (
                 <>
-                  <div className="mt-6 text-center text-[12.5px] text-white/55">
-                    聊天室裡、有幾句話被很多人按了愛心
+                  <div className="mt-7 text-center">
+                    <div className="text-[12.5px] text-white/55 mb-1">
+                      聊天室裡、有幾句話被很多人按了愛心
+                    </div>
+                    <div className="text-[11px] text-glow-pink/85">
+                      ↓ 保存這張圖、跟朋友炫耀一下
+                    </div>
                   </div>
-                  <div className="mt-3 mb-2 flex justify-center">
+                  {/* ShareCard 預覽：540x900 原圖、用 overflow:hidden 容器裝、固定 324x540 視覺尺寸 */}
+                  <div
+                    className="mt-3 mb-2 mx-auto overflow-hidden rounded-2xl border border-white/[0.08]"
+                    style={{ width: 324, height: 540 }}
+                  >
                     <div
                       style={{
-                        transform: "scale(0.6)",
-                        transformOrigin: "top center",
                         width: 540,
-                        marginBottom: -360,
+                        transform: "scale(0.6)",
+                        transformOrigin: "top left",
                       }}
                     >
                       <ShareCard
@@ -877,19 +893,13 @@ export default function ChatPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-2.5">
+                  <div className="mt-4">
                     <button
                       onClick={handleSaveImage}
                       disabled={savingImage}
-                      className="w-full py-3 rounded-2xl text-white/95 text-[14.5px] font-medium bg-white/[0.06] border border-white/[0.12] hover:bg-white/[0.1] active:scale-[0.98] disabled:opacity-60 transition"
+                      className="w-full py-3.5 rounded-2xl text-white text-[15px] font-semibold bg-gradient-to-r from-glow-pink/30 to-glow-violet/30 border border-glow-pink/40 hover:from-glow-pink/40 hover:to-glow-violet/40 active:scale-[0.98] disabled:opacity-60 transition"
                     >
                       {savingImage ? "正在產生圖片…" : "📥 保存分享圖"}
-                    </button>
-                    <button
-                      onClick={handleReplay}
-                      className="w-full py-3 rounded-2xl text-white/55 text-[13.5px] hover:text-white/80 transition"
-                    >
-                      結束聊天 · 換一個心情重新開始
                     </button>
                   </div>
                 </>

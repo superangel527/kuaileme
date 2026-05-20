@@ -344,10 +344,10 @@ export default function PayPage() {
           </div>
 
           {/* 小提醒 */}
-          <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-            <span className="text-[13px] mt-px">💡</span>
-            <span className="text-[11.5px] text-white/55 leading-relaxed">
-              小提醒：聊天室只會討論你、不會直接跟你說話喔！
+          <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-glow-pink/[0.08] to-glow-violet/[0.08] border border-white/[0.1]">
+            <span className="text-[13px] mt-px">✨</span>
+            <span className="text-[12px] text-white/80 leading-relaxed font-medium">
+              在這個聊天室裡，你就是大主角！
             </span>
           </div>
         </div>
