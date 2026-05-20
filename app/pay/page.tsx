@@ -67,43 +67,76 @@ export default function PayPage() {
     setLoadingSteps(pickLoadingSteps());
   }, [router]);
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (paying) return;
     setPaying(true);
+
+    const topic =
+      typeof window !== "undefined" ? localStorage.getItem("kl_topic") || "" : "";
+    const nick =
+      typeof window !== "undefined"
+        ? localStorage.getItem("kl_nickname") || ""
+        : "";
+
+    // 清掉上一場資料
     if (typeof window !== "undefined") {
-      localStorage.setItem("kl_paid_at", String(Date.now()));
-      // 趁 loading 期間呼叫 AI 定調 + 生成爆發期/收尾訊息
-      const topic = localStorage.getItem("kl_topic") || "";
-      const nickname = localStorage.getItem("kl_nickname") || "";
-      // 清掉上一場的 prepared（避免吃舊資料）
       localStorage.removeItem("kl_prepared");
       localStorage.removeItem("kl_scenario");
-      if (topic) {
-        fetch("/api/prepare-session", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text: topic, nickname }),
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => {
-            if (d?.topic) {
-              localStorage.setItem("kl_prepared", JSON.stringify(d));
-              // 保留 kl_scenario 給 chat 頁快速讀取
-              localStorage.setItem("kl_scenario", d.topic);
-            }
-          })
-          .catch(() => {
-            /* chat 頁有 keyword fallback */
-          });
-      }
+      localStorage.removeItem("kl_paid_at");
     }
-    // loading 拉到 4.5s — 4 句訊息依序浮現、給 AI 充足時間
-    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(1), 900));
-    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 1900));
-    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(3), 3000));
-    payTimeoutsRef.current.push(
-      setTimeout(() => router.replace("/chat"), 4500)
-    );
+
+    // 1. 先呼叫 AI prepare-session（不等、fire and forget — 使用者付完跳回 chat 時應該已經回來）
+    if (topic) {
+      fetch("/api/prepare-session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: topic, nickname: nick }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d?.topic && typeof window !== "undefined") {
+            localStorage.setItem("kl_prepared", JSON.stringify(d));
+            localStorage.setItem("kl_scenario", d.topic);
+          }
+        })
+        .catch(() => {});
+    }
+
+    // 2. 呼叫 PayUni create-order 拿到要 POST 的表單欄位
+    try {
+      const resp = await fetch("/api/payuni/create-order", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ nickname: nick, topic }),
+      });
+      const data = await resp.json();
+
+      if (!data?.ok || !data?.actionUrl || !data?.fields) {
+        throw new Error(data?.error || "建單失敗");
+      }
+
+      // 3. 動態生表單、自動 submit 跳轉 PayUni 結帳頁
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.actionUrl;
+      form.style.display = "none";
+      for (const [key, value] of Object.entries(data.fields)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
+    } catch (e) {
+      alert(
+        "付款建單失敗：" +
+          (e instanceof Error ? e.message : String(e)) +
+          "\n請通知客服或稍後再試。"
+      );
+      setPaying(false);
+    }
   };
 
   if (paying) {

@@ -331,9 +331,16 @@ export default function ChatPage() {
     };
   }, [mounted]);
 
-  // 付款檢查 — 沒付款踢回 /pay
+  // 付款檢查 — 先看 cookie（PayUni return 設的）再看 localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // 從 cookie 把 PayUni 付款 marker 搬到 localStorage
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)kl_paid_at=([^;]+)/);
+    if (cookieMatch) {
+      localStorage.setItem("kl_paid_at", decodeURIComponent(cookieMatch[1]));
+      // 清掉 cookie（避免下次還生效）
+      document.cookie = "kl_paid_at=; Max-Age=0; path=/";
+    }
     const paid = localStorage.getItem("kl_paid_at");
     if (!paid) {
       router.replace("/pay");
