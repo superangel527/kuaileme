@@ -16,11 +16,12 @@ export default function ChatInputBar({
           onClick={onUnlock}
           className="group w-full flex items-center gap-3 pl-4 pr-3 py-3 rounded-full bg-gradient-to-r from-glow-pink/20 via-glow-violet/20 to-glow-cyan/20 border border-white/10 hover:border-white/20 active:scale-[0.99] transition"
         >
-          <span className="text-[15px]">🔒</span>
-          <span className="flex-1 text-left text-[14.5px] text-white/85 font-medium">
-            解鎖繼續聊天
+          <span className="flex-1 text-left text-[14px] text-white/90 font-medium leading-snug">
+            換一句心情，
+            <br />
+            再被聊一次
           </span>
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan text-white text-[12.5px] font-semibold shadow-[0_4px_18px_-4px_rgba(255,95,162,0.6)]">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan text-white text-[12.5px] font-semibold shadow-[0_4px_18px_-4px_rgba(255,95,162,0.6)] shrink-0">
             NT$19
           </span>
         </button>

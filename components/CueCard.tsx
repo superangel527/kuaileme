@@ -40,7 +40,7 @@ export default function CueCard({
       <div className="relative">
         {/* badge */}
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan text-white text-[10.5px] font-semibold mb-2.5 shadow-[0_4px_12px_-2px_rgba(255,95,162,0.5)]">
-          ✨ 有人 Cue 你了
+          ✨ 有人正在等你回一句
         </div>
 
         {/* 問題 */}

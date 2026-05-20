@@ -39,6 +39,7 @@ type MsgItem = {
   char: Character;
   text: string;
   ts: Date;
+  likeCount: number;
 };
 type JoinItem = {
   kind: "join";
@@ -372,6 +373,7 @@ export default function ChatPage() {
             char: transitionChar,
             text: renderText(cue.transition, plan.nickname),
             ts: new Date(),
+            likeCount: 3 + Math.floor(Math.random() * 12),
           },
         ]);
       }, cue.transitionAt);
@@ -407,6 +409,7 @@ export default function ChatPage() {
             char: evt.char,
             text: renderText(evt.text, plan.nickname),
             ts: new Date(),
+            likeCount: 5 + Math.floor(Math.random() * 25),
           },
         ]);
       }, evt.at);
@@ -448,11 +451,44 @@ export default function ChatPage() {
     scrollEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, [items.length, typings.length, ended]);
 
+  // 愛心 reaction 慢慢增加 — 製造熱度感
+  useEffect(() => {
+    if (ended) return;
+    const id = setInterval(() => {
+      setItems((arr) => {
+        const msgIdxs = arr
+          .map((it, i) => (it.kind === "msg" ? i : -1))
+          .filter((i) => i >= 0);
+        if (msgIdxs.length === 0) return arr;
+        // 隨機挑 1-3 則 +1-4
+        const next = [...arr];
+        const pickCount = 1 + Math.floor(Math.random() * 3);
+        for (let k = 0; k < pickCount; k++) {
+          const idx = msgIdxs[Math.floor(Math.random() * msgIdxs.length)];
+          const it = next[idx];
+          if (it.kind === "msg") {
+            next[idx] = {
+              ...it,
+              likeCount: it.likeCount + 1 + Math.floor(Math.random() * 3),
+            };
+          }
+        }
+        return next;
+      });
+    }, 1800 + Math.random() * 1400);
+    return () => clearInterval(id);
+  }, [ended]);
+
   const handleReplay = () => {
+    // 回首頁：清掉舊話題、讓使用者打新心情
     if (typeof window !== "undefined") {
-      localStorage.setItem("kl_started_at", String(Date.now()));
+      localStorage.removeItem("kl_topic");
+      localStorage.removeItem("kl_prepared");
+      localStorage.removeItem("kl_scenario");
+      localStorage.removeItem("kl_paid_at");
+      // kl_nickname 保留 — 同一個暱稱繼續用
     }
-    router.push("/pay");
+    router.push("/");
   };
 
   const handleHome = () => router.push("/");
@@ -508,6 +544,7 @@ export default function ChatPage() {
             char,
             text: renderText(line.text, plan.nickname),
             ts: new Date(),
+            likeCount: 8 + Math.floor(Math.random() * 30),
           },
         ]);
       }, cursor);
@@ -581,6 +618,7 @@ export default function ChatPage() {
                   char={it.char}
                   text={it.text}
                   ts={it.ts}
+                  likeCount={it.likeCount}
                 />
               );
             }
@@ -622,13 +660,13 @@ export default function ChatPage() {
               <div className="text-[13px] text-white/45">
                 聊天室慢慢安靜下來了……
               </div>
-              <div className="mt-1 text-[15px] text-white/85 font-medium leading-relaxed">
+              <div className="mt-2 text-[16px] text-white font-medium leading-relaxed">
                 聊天室裡，
                 <br />
-                還有人想對你說話。
+                好像還有人想繼續聊你。
               </div>
               <div className="mt-2 text-[11.5px] text-white/35">
-                剛剛只是第一輪・換一句心情會進入另一個聊天室
+                換一句新心情、會進入另一個聊天室
               </div>
             </div>
           )}

@@ -13,11 +13,19 @@ const TEASER_LINES = [
   "我會想一直偷看她限動",
 ];
 
-const LOADING_STEPS = [
-  "聊天室開始注意到你了…",
-  "他們正在討論你剛剛那句話…",
-  "有人已經想誇你了…",
+const LOADING_POOL = [
+  "聊天室正在偷偷注意你…",
+  "有人開始提到你剛剛那句話了",
+  "聊天室裡，好像有人在等你",
+  "有人已經開始聊你了",
+  "你剛剛那句話，被聊天室看見了",
+  "有人正在替你說話",
 ];
+
+function pickLoadingSteps(): string[] {
+  const shuffled = [...LOADING_POOL].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 4);
+}
 
 export default function PayPage() {
   const router = useRouter();
@@ -27,6 +35,12 @@ export default function PayPage() {
   // 所有隨機都搬到 useEffect — 避免 SSR/client mismatch
   const [previewChars, setPreviewChars] = useState<Character[]>([]);
   const [onlineCount, setOnlineCount] = useState(2000);
+  const [loadingSteps, setLoadingSteps] = useState<string[]>([
+    "聊天室正在偷偷注意你…",
+    "有人開始提到你剛剛那句話了",
+    "聊天室裡，好像有人在等你",
+    "有人正在替你說話",
+  ]);
   // 付款 loading 過場的 timeouts — unmount 時要清掉
   const payTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -50,6 +64,7 @@ export default function PayPage() {
     }
     setPreviewChars(pickRandomCharacters(4));
     setOnlineCount(1800 + Math.floor(Math.random() * 600));
+    setLoadingSteps(pickLoadingSteps());
   }, [router]);
 
   const handlePay = () => {
@@ -82,11 +97,12 @@ export default function PayPage() {
           });
       }
     }
-    // loading 拉長到 3.5s — 給 AI 多一點時間回應、但太久也直接進
+    // loading 拉到 4.5s — 4 句訊息依序浮現、給 AI 充足時間
     payTimeoutsRef.current.push(setTimeout(() => setStepIdx(1), 900));
-    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 2000));
+    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 1900));
+    payTimeoutsRef.current.push(setTimeout(() => setStepIdx(3), 3000));
     payTimeoutsRef.current.push(
-      setTimeout(() => router.replace("/chat"), 3500)
+      setTimeout(() => router.replace("/chat"), 4500)
     );
   };
 
@@ -104,7 +120,7 @@ export default function PayPage() {
             />
           </div>
           <div className="space-y-3">
-            {LOADING_STEPS.map((s, i) => (
+            {loadingSteps.map((s, i) => (
               <p
                 key={i}
                 className={`text-[16px] transition-all duration-500 ${
