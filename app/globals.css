@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0a12;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+body {
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(139, 92, 246, 0.10), transparent 70%),
+    radial-gradient(60% 50% at 50% 100%, rgba(255, 95, 162, 0.12), transparent 70%),
+    radial-gradient(40% 30% at 90% 30%, rgba(34, 211, 238, 0.06), transparent 70%),
+    #0a0a14;
+  min-height: 100dvh;
+}
+
+/* 流星：偶爾從右上劃向左下 */
+@keyframes shootingStar {
+  0% {
+    transform: translate(0, 0) rotate(215deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  35% {
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-280px, 200px) rotate(215deg);
+    opacity: 0;
+  }
+}
+.shooting-star {
+  position: fixed;
+  top: 10%;
+  right: 8%;
+  width: 90px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #fff, #ff5fa2, transparent);
+  border-radius: 999px;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.55));
+  animation: shootingStar 9s ease-in-out infinite;
+  animation-delay: 3.5s;
+  pointer-events: none;
+  z-index: -5;
+  opacity: 0;
+}
+.shooting-star.delay-2 {
+  top: 25%;
+  right: 22%;
+  animation-delay: 11s;
+  animation-duration: 11s;
+}
+
+/* 自訂滾動條：深夜聊天室感 */
+.chat-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* iOS Safari 100vh 修正 */
+@supports (height: 100dvh) {
+  .h-screen-safe {
+    height: 100dvh;
+  }
+}
+.h-screen-safe {
+  height: 100vh;
+}
