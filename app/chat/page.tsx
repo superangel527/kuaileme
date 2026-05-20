@@ -179,14 +179,17 @@ export default function ChatPage() {
         ? localStorage.getItem("kl_topic")
         : "") || "";
 
-    // 讀取 pay 頁存的 AI prepared session（topic + earlyMessages + hearts）
+    // 讀取 pay 頁存的 AI prepared session（完整 47 句劇本 + 3 個 Cue）
     type AIMsg = { text: string; gender: "M" | null };
+    type AICue = { transition: string; question: string };
     let prepared: {
       topic?: string;
-      earlyMessages?: AIMsg[];
-      hearts?: AIMsg[];
-      tone?: string;
       keywords?: string[];
+      tone?: string;
+      earlyMessages?: AIMsg[];
+      midMessages?: AIMsg[];
+      lateMessages?: AIMsg[];
+      cues?: AICue[];
     } | null = null;
     try {
       const raw =
@@ -204,17 +207,17 @@ export default function ChatPage() {
         ? (prepared.topic as ScenarioKey)
         : detectScenarioByKeywords(topic);
 
-    // AI 生的 early/hearts 數量
+    // AI 各階段數量
     const aiEarly = prepared?.earlyMessages ?? [];
-    const aiHearts = prepared?.hearts ?? [];
-    const aiEarlyCount = Math.min(aiEarly.length, COUNTS.early);
-    const aiHeartsCount = Math.min(aiHearts.length, 2);
+    const aiMid = prepared?.midMessages ?? [];
+    const aiLate = prepared?.lateMessages ?? [];
+    const aiCues = prepared?.cues ?? [];
 
-    // 池子要補的數量
+    // 池子補位：AI 不夠時才用
     const fillCounts = {
-      early: Math.max(0, COUNTS.early - aiEarlyCount),
-      mid: COUNTS.mid,
-      late: Math.max(0, COUNTS.late - aiHeartsCount),
+      early: Math.max(0, COUNTS.early - aiEarly.length),
+      mid: Math.max(0, COUNTS.mid - aiMid.length),
+      late: Math.max(0, COUNTS.late - aiLate.length),
     };
     const poolLines = buildScript(scenario, fillCounts);
 
@@ -225,19 +228,18 @@ export default function ChatPage() {
       return line;
     };
 
-    // 早段：AI 先 + 池子補
+    // 各段：AI 優先、池子補
     const earlyLines: ScriptLine[] = [
-      ...aiEarly.slice(0, aiEarlyCount).map((m) => aiToLine(m, "early", "praise")),
+      ...aiEarly.slice(0, COUNTS.early).map((m) => aiToLine(m, "early", "praise")),
       ...poolLines.filter((l) => l.phase === "early"),
     ];
-    // 中段：純池子
-    const midLines = poolLines.filter((l) => l.phase === "mid");
-    // 後段：池子戳心 + AI 戳心放在最後（最深的那兩句留給 AI）
+    const midLines: ScriptLine[] = [
+      ...aiMid.slice(0, COUNTS.mid).map((m) => aiToLine(m, "mid", "understanding")),
+      ...poolLines.filter((l) => l.phase === "mid"),
+    ];
     const lateLines: ScriptLine[] = [
+      ...aiLate.slice(0, COUNTS.late).map((m) => aiToLine(m, "late", "heart_pierce")),
       ...poolLines.filter((l) => l.phase === "late"),
-      ...aiHearts
-        .slice(0, aiHeartsCount)
-        .map((m) => aiToLine(m, "late", "heart_pierce")),
     ];
 
     // 抽 16 個角色用（夠多樣）
@@ -296,9 +298,16 @@ export default function ChatPage() {
     ];
 
     // Cue 點名：3 次 — 38s / 88s / 142s
-    // 每次 cue 前 1.5s 先有人說一句鋪陳
-    // ✨ 傳 scenario 進去、Cue 問題就會圍繞主題
-    const cueScripts = pickCueScripts(3, scenario);
+    // 優先用 AI 生的 Cue（圍繞主題）、不夠用池子補
+    const aiCueCount = Math.min(aiCues.length, 3);
+    const poolCueScripts = pickCueScripts(3 - aiCueCount, scenario);
+    const cueScripts = [
+      ...aiCues.slice(0, aiCueCount).map((c) => ({
+        transition: c.transition,
+        question: c.question,
+      })),
+      ...poolCueScripts,
+    ];
     const cueSchedule = [
       { id: "c1", at: 38000, transitionAt: 36500, ...cueScripts[0] },
       { id: "c2", at: 88000, transitionAt: 86500, ...cueScripts[1] },
@@ -312,6 +321,7 @@ export default function ChatPage() {
       nickname,
       topic,
       scenario,
+      keywords: prepared?.keywords ?? [],
       scheduled,
       chars,
       joinSchedule,
@@ -544,7 +554,7 @@ export default function ChatPage() {
 
   const handleHome = () => router.push("/");
 
-  const handleCueAnswer = (cueId: string, text: string) => {
+  const handleCueAnswer = async (cueId: string, text: string) => {
     if (!plan || ended) return;
 
     // 1. 把 cue 標記為 answered
@@ -569,8 +579,39 @@ export default function ChatPage() {
       },
     ]);
 
-    // 3. 排程 6 則延伸討論
-    const reactions = buildCueReactions(plan.scenario, 6);
+    // 3. 先用池子 fallback、同時叫 AI（如果 AI 回得快就用 AI 蓋掉）
+    let reactions: ScriptLine[] = buildCueReactions(plan.scenario, 6);
+    try {
+      const resp = await fetch("/api/generate-reactions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          topic: plan.scenario,
+          keywords: plan.keywords,
+          nickname: plan.nickname,
+          userReply: text,
+        }),
+      });
+      if (resp.ok) {
+        const data = (await resp.json()) as {
+          messages?: Array<{ text: string; gender: "M" | null }>;
+        };
+        if (data?.messages && data.messages.length > 0) {
+          reactions = data.messages.map((m) => {
+            const line: ScriptLine = {
+              text: m.text,
+              category: "understanding",
+              phase: "mid",
+            };
+            if (m.gender === "M") line.requiresGender = "M";
+            return line;
+          });
+        }
+      }
+    } catch {
+      /* 用池子的 reactions */
+    }
+
     let lastId: string | null = null;
     let cursor = 700;
     reactions.forEach((line, idx) => {
