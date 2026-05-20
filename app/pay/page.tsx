@@ -90,22 +90,23 @@ export default function PayPage() {
       localStorage.removeItem("kl_paid_at");
     }
 
-    // 先呼叫 AI prepare-session（不等、fire and forget）
-    if (topic) {
-      fetch("/api/prepare-session", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text: topic, nickname: nick }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => {
-          if (d?.topic && typeof window !== "undefined") {
-            localStorage.setItem("kl_prepared", JSON.stringify(d));
-            localStorage.setItem("kl_scenario", d.topic);
-          }
+    // 先呼叫 AI prepare-session — 保留 promise、等下要 await
+    // (AI 生 47 句要 5-8 秒、必須等回來才能跳 chat、不然會 fallback 池子)
+    const aiPromise: Promise<void> = topic
+      ? fetch("/api/prepare-session", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ text: topic, nickname: nick }),
         })
-        .catch(() => {});
-    }
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d?.topic && typeof window !== "undefined") {
+              localStorage.setItem("kl_prepared", JSON.stringify(d));
+              localStorage.setItem("kl_scenario", d.topic);
+            }
+          })
+          .catch(() => {})
+      : Promise.resolve();
 
     // 走真實 PayUni 流程
     if (paymentMode === "payuni") {
@@ -146,16 +147,28 @@ export default function PayPage() {
       }
     }
 
-    // 假流程：loading 後直接寫 paid_at + 跳 /chat
+    // 假流程：loading 動畫跑 + 等 AI 回來才跳 /chat
     if (typeof window !== "undefined") {
       localStorage.setItem("kl_paid_at", String(Date.now()));
     }
     payTimeoutsRef.current.push(setTimeout(() => setStepIdx(1), 900));
     payTimeoutsRef.current.push(setTimeout(() => setStepIdx(2), 1900));
     payTimeoutsRef.current.push(setTimeout(() => setStepIdx(3), 3000));
-    payTimeoutsRef.current.push(
-      setTimeout(() => router.replace("/chat"), 4500)
-    );
+
+    // 至少 4.5 秒 loading 動畫（不能太快、感覺不真實）
+    const minLoading = new Promise<void>((resolve) => {
+      payTimeoutsRef.current.push(setTimeout(resolve, 4500));
+    });
+    // AI 最多等 9 秒、超時就 fallback 池子
+    const aiCapped = Promise.race([
+      aiPromise,
+      new Promise<void>((resolve) => {
+        payTimeoutsRef.current.push(setTimeout(resolve, 9000));
+      }),
+    ]);
+    // 兩個都完成才跳
+    await Promise.all([aiCapped, minLoading]);
+    router.replace("/chat");
   };
 
   if (paying) {

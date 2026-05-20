@@ -20,9 +20,6 @@ import CueCard from "@/components/CueCard";
 import UserReply from "@/components/UserReply";
 import ShareCard, { type ShareMsg } from "@/components/ShareCard";
 import {
-  buildScript,
-  buildCueReactions,
-  pickCueScripts,
   renderText,
   type Category,
   type Phase,
@@ -33,6 +30,11 @@ import {
   type ScenarioKey,
   ALL_SCENARIO_KEYS,
 } from "@/lib/scenarios";
+import {
+  buildSafeFallback,
+  buildSafeCueReactions,
+  pickSafeCues,
+} from "@/lib/safe-fallback";
 
 type MsgItem = {
   kind: "msg";
@@ -213,13 +215,13 @@ export default function ChatPage() {
     const aiLate = prepared?.lateMessages ?? [];
     const aiCues = prepared?.cues ?? [];
 
-    // 池子補位：AI 不夠時才用
+    // 補位：AI 不夠時用萬用安全句（絕不走場景池、避免雞同鴨講）
     const fillCounts = {
       early: Math.max(0, COUNTS.early - aiEarly.length),
       mid: Math.max(0, COUNTS.mid - aiMid.length),
       late: Math.max(0, COUNTS.late - aiLate.length),
     };
-    const poolLines = buildScript(scenario, fillCounts);
+    const poolLines = buildSafeFallback(fillCounts);
 
     // AI lines 轉成 ScriptLine 格式
     const aiToLine = (m: AIMsg, phase: Phase, category: Category): ScriptLine => {
@@ -298,9 +300,9 @@ export default function ChatPage() {
     ];
 
     // Cue 點名：3 次 — 38s / 88s / 142s
-    // 優先用 AI 生的 Cue（圍繞主題）、不夠用池子補
+    // 優先用 AI 生的 Cue（圍繞主題）、不夠用萬用安全 Cue 補（純情緒探詢、不沾話題）
     const aiCueCount = Math.min(aiCues.length, 3);
-    const poolCueScripts = pickCueScripts(3 - aiCueCount, scenario);
+    const poolCueScripts = pickSafeCues(3 - aiCueCount);
     const cueScripts = [
       ...aiCues.slice(0, aiCueCount).map((c) => ({
         transition: c.transition,
@@ -586,8 +588,8 @@ export default function ChatPage() {
       },
     ]);
 
-    // 3. 先用池子 fallback、同時叫 AI（如果 AI 回得快就用 AI 蓋掉）
-    let reactions: ScriptLine[] = buildCueReactions(plan.scenario, 6);
+    // 3. 先用萬用安全句 fallback、同時叫 AI（如果 AI 回得快就用 AI 蓋掉）
+    let reactions: ScriptLine[] = buildSafeCueReactions(6);
     try {
       const resp = await fetch("/api/generate-reactions", {
         method: "POST",
