@@ -83,3 +83,26 @@ body {
 .h-screen-safe {
   height: 100vh;
 }
+
+/* 付款過場：聊天室訊息殘影漂浮（從下慢慢飄上 + 淡入淡出） */
+@keyframes ghostFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  20% {
+    opacity: 0.22;
+  }
+  80% {
+    opacity: 0.22;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+}
+.ghost-float {
+  animation-name: ghostFloat;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}

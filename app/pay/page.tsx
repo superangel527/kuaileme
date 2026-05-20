@@ -13,12 +13,30 @@ const TEASER_LINES = [
   "我會想一直偷看她限動",
 ];
 
-// 付款過場：4 張預告卡（依序淡入）
-const LOADING_CARDS = [
-  { icon: "💬", text: "有人正在輸入…", typing: true },
-  { icon: "♥", text: "有人覺得你很特別…", typing: false },
-  { icon: "✨", text: "有人心疼你的這句話…", typing: false },
-  { icon: "💭", text: "討論已經開始了！", typing: false },
+// 付款過場文案池（定版 5 句、隨機抽 4 句）
+const LOADING_TEXT_POOL = [
+  "聊天室開始注意到你了…",
+  "有人已經開始聊你剛剛那句話",
+  "聊天室裡，好像有人在等你",
+  "有人正在替你說話",
+  "你剛剛那句話，被聊天室看見了",
+];
+
+// 卡片固定 icon 順序（typing dots 永遠在第 1 張）
+const LOADING_ICONS = ["💬", "♥", "✨", "💭"];
+
+// 背景殘影飄過的聊天室訊息片段
+const GHOST_SNIPPETS = [
+  "她又這樣了",
+  "我超心疼她",
+  "她是不是還好",
+  "+1 真的",
+  "靠 完全懂",
+  "她該不會在哭吧",
+  "我有點放不下她",
+  "她那種感覺 真的少見",
+  "她最近真的撐很久",
+  "我覺得她很有事",
 ];
 
 export default function PayPage() {
@@ -30,6 +48,14 @@ export default function PayPage() {
   // 所有隨機都搬到 useEffect — 避免 SSR/client mismatch
   const [previewChars, setPreviewChars] = useState<Character[]>([]);
   const [onlineCount, setOnlineCount] = useState(2000);
+  // 付款過場的 4 句文案（從 5 句池隨機抽）
+  const [loadingTexts, setLoadingTexts] = useState<string[]>(
+    LOADING_TEXT_POOL.slice(0, 4)
+  );
+  // 背景殘影：6 個訊息片段、隨機位置 + 動畫 delay
+  const [ghosts, setGhosts] = useState<
+    Array<{ text: string; left: number; top: number; delay: number; dur: number }>
+  >([]);
   // 付款 loading 過場的 timeouts — unmount 時要清掉
   const payTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -53,6 +79,21 @@ export default function PayPage() {
     }
     setPreviewChars(pickRandomCharacters(4));
     setOnlineCount(1800 + Math.floor(Math.random() * 600));
+    // 從 5 句池隨機抽 4 句
+    setLoadingTexts(
+      [...LOADING_TEXT_POOL].sort(() => Math.random() - 0.5).slice(0, 4)
+    );
+    // 生 8 個殘影 — 隨機散落、不同延遲與週期
+    const shuffled = [...GHOST_SNIPPETS].sort(() => Math.random() - 0.5);
+    setGhosts(
+      Array.from({ length: 8 }, (_, i) => ({
+        text: shuffled[i % shuffled.length],
+        left: 5 + Math.random() * 90, // 5-95% 寬
+        top: 8 + Math.random() * 78, // 8-86% 高
+        delay: Math.random() * 6, // 0-6s 延遲
+        dur: 9 + Math.random() * 6, // 9-15s 動畫週期
+      }))
+    );
   }, [router]);
 
   // 付款模式開關：
@@ -189,7 +230,25 @@ export default function PayPage() {
     return (
       <main className="relative min-h-screen-safe flex flex-col px-5 pt-7 pb-5 overflow-hidden">
         <BottomGlow />
-        <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
+        {/* 背景殘影：聊天室訊息片段慢慢飄上 */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+          {ghosts.map((g, i) => (
+            <div
+              key={i}
+              className="absolute ghost-float text-[12.5px] text-white italic select-none whitespace-nowrap"
+              style={{
+                left: `${g.left}%`,
+                top: `${g.top}%`,
+                filter: "blur(3px)",
+                animationDuration: `${g.dur}s`,
+                animationDelay: `${g.delay}s`,
+              }}
+            >
+              「{g.text}」
+            </div>
+          ))}
+        </div>
+        <div className="relative flex-1 flex flex-col max-w-md mx-auto w-full z-10">
           {/* 大標 */}
           <h1 className="text-[24px] sm:text-[26px] font-bold leading-tight">
             聊天室正在
@@ -202,11 +261,13 @@ export default function PayPage() {
             你的心情已經被丟進聊天室 <span className="text-glow-pink">💗</span>
           </p>
 
-          {/* 4 張預告卡 — 左右交錯堆疊 */}
+          {/* 4 張預告卡 — 左右交錯堆疊（內容從 5 句池隨機抽 4 句） */}
           <div className="mt-7 flex flex-col gap-3">
-            {LOADING_CARDS.map((card, i) => {
+            {loadingTexts.map((text, i) => {
               const visible = i <= stepIdx;
               const alignClass = i % 2 === 0 ? "self-start" : "self-end";
+              const icon = LOADING_ICONS[i % LOADING_ICONS.length];
+              const isFirst = i === 0; // 第一張用 typing dots
               return (
                 <div
                   key={i}
@@ -220,12 +281,12 @@ export default function PayPage() {
                   }}
                 >
                   <span className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-glow-pink/45 via-glow-violet/45 to-glow-cyan/35 flex items-center justify-center text-[15px]">
-                    {card.icon}
+                    {icon}
                   </span>
                   <span className="text-[13.5px] text-white/90 flex-1 leading-snug">
-                    {card.text}
+                    {text}
                   </span>
-                  {card.typing && (
+                  {isFirst && (
                     <span className="flex gap-[3px] pr-0.5">
                       <span className="w-[3px] h-[3px] rounded-full bg-white/70 animate-blink-dot" />
                       <span

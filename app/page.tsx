@@ -43,12 +43,10 @@ const TRUST_LINES = [
 ];
 
 const QUICK_TOPICS = [
-  { emoji: "🪞", text: "我是不是很醜" },
-  { emoji: "🌧", text: "我最近快撐不住了" },
-  { emoji: "💔", text: "為什麼沒有人選我" },
-  { emoji: "🌙", text: "我是不是很難被愛" },
-  { emoji: "☁️", text: "我不快樂" },
-  { emoji: "🫂", text: "我其實很想有人抱抱我" },
+  { emoji: "💤", text: "我最近真的很累" },
+  { emoji: "💔", text: "我是不是不值得被愛" },
+  { emoji: "🍰", text: "我會不會很胖" },
+  { emoji: "🪞", text: "我看起來會老嗎？" },
 ];
 
 export default function HomePage() {
@@ -136,11 +134,9 @@ export default function HomePage() {
             。
           </h1>
 
-          {/* 新加的「危險偷看感」副標 */}
-          <p className="mt-4 text-center text-[14px] text-white/65 italic leading-relaxed">
-            聊天室裡，
-            <br className="sm:hidden" />
-            <span className="text-white/85">已經有人開始替你說話了。</span>
+          {/* 副標 — 偷看感 */}
+          <p className="mt-4 text-center text-[14px] text-white/70 italic leading-relaxed">
+            <span className="text-white/90">有人好像很在意你剛剛那句話。</span>
           </p>
         </div>
 
@@ -165,7 +161,7 @@ export default function HomePage() {
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-glow-pink to-glow-violet text-[11px] font-semibold">
                 1
               </span>
-              丟一句話，看他們會怎麼聊你
+              丟一句話，看看他們會怎麼聊你
             </label>
             <div className="relative">
               <textarea
@@ -242,13 +238,13 @@ export default function HomePage() {
         {/* 安全 pill */}
         <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2">
           <span className="inline-flex items-center gap-1 text-[11.5px] text-white/55">
-            🔒 匿名體驗
+            💬 即時聊天室
           </span>
           <span className="inline-flex items-center gap-1 text-[11.5px] text-white/55">
-            🕒 3 分鐘深夜聊天室
+            🔒 匿名模式
           </span>
           <span className="inline-flex items-center gap-1 text-[11.5px] text-white/55">
-            🛡 不會保存內容
+            🛡 不會留下紀錄
           </span>
         </div>
 

@@ -50,24 +50,30 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(
         }}
       />
 
-      {/* Logo + slogan */}
-      <div style={{ textAlign: "center", marginBottom: 22, position: "relative" }}>
+      {/* Logo + #誇了嗎 hashtag */}
+      <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
         <img
           src="/logo.png"
           alt="誇了嗎"
-          style={{ width: 120, height: "auto", margin: "0 auto" }}
+          style={{ width: 96, height: "auto", margin: "0 auto" }}
           crossOrigin="anonymous"
         />
-        <p
+        <div
           style={{
-            fontSize: 13,
-            color: "rgba(255,255,255,0.55)",
-            marginTop: 6,
-            letterSpacing: 4,
+            display: "inline-block",
+            marginTop: 10,
+            padding: "5px 14px",
+            background: "rgba(255,95,162,0.14)",
+            border: "1px solid rgba(255,95,162,0.32)",
+            borderRadius: 999,
+            fontSize: 13.5,
+            fontWeight: 600,
+            color: "white",
+            letterSpacing: 1,
           }}
         >
-          來聊天 · 被誇誇 · 超開心
-        </p>
+          #誇了嗎
+        </div>
       </div>
 
       {/* 大引號 + 主標金句 */}
@@ -124,7 +130,7 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(
             marginBottom: 12,
           }}
         >
-          聊天室剛剛這樣聊 {nickname}…
+          聊天室裡、被很多人按愛心的幾句：
         </div>
 
         {messages.map((m, i) => (
