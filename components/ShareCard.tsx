@@ -22,22 +22,24 @@ type Props = {
 const BASE_SRC = "/share.png?v=2";
 
 // share.png 1024×1536 內「聊天截圖區」座標（按新版空白框位置量、可再微調）
+// Angel 反饋：字再大、排版更鬆、下面空白用滿 — 卡片高 86→100、gap 5→8、4 個訊息
+// 從 y=780 開始到 y=1206、佔聊天截圖整個區域
 const LAYOUT = {
-  // 標籤「聊天室剛剛這樣聊 {nickname}…」位置
+  // 標籤位置（不再用、底圖已有）
   labelX: 130,
   labelY: 775,
   labelFontPx: 22,
-  // 4 個訊息卡片
-  msgStartY: 815,
-  msgHeight: 76,
-  msgGap: 4,
+  // 4 個訊息卡片（4*100 + 3*8 = 424、fit 聊天截圖區）
+  msgStartY: 780,
+  msgHeight: 100,
+  msgGap: 8,
   msgLeft: 105,
   msgRight: 920,
-  // avatar
-  avatarRadius: 26,
-  avatarCx: 148,
-  // text / name
-  textLeft: 195,
+  // avatar 圓 — 大一點
+  avatarRadius: 36,
+  avatarCx: 158,
+  // text / name — 右移留 avatar 空間
+  textLeft: 215,
   // ♥ pill
   pillRight: 905,
 };
@@ -108,28 +110,28 @@ function drawMessage(
 
   // initial 字
   const initial = m.char.initial || m.char.name.slice(0, 1);
-  ctx.font = `bold 26px ${FONT}`;
+  ctx.font = `bold 36px ${FONT}`;
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(initial, cx, cy);
 
   // 名字（左對齊、淡白）
-  ctx.font = `500 19px ${FONT}`;
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.font = `500 26px ${FONT}`;
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(m.char.name, LAYOUT.textLeft, yTop + 26);
+  ctx.fillText(m.char.name, LAYOUT.textLeft, yTop + 32);
 
   // ♥ pill — 右側、先量寬度
   const likeText = `${m.likeCount.toLocaleString()}`;
-  ctx.font = `bold 20px ${FONT}`;
+  ctx.font = `bold 26px ${FONT}`;
   const heartW = ctx.measureText("♥ ").width;
   const numW = ctx.measureText(likeText).width;
   const pillContentW = heartW + numW;
-  const pillPaddingX = 14;
+  const pillPaddingX = 18;
   const pillW = pillContentW + pillPaddingX * 2;
-  const pillH = 34;
+  const pillH = 42;
   const pillX = LAYOUT.pillRight - pillW;
   const pillY = yTop + LAYOUT.msgHeight / 2 - pillH / 2;
 
@@ -146,14 +148,14 @@ function drawMessage(
   ctx.fillText(`♥ ${likeText}`, pillX + pillPaddingX, pillY + pillH / 2);
 
   // 訊息文字（左對齊、白、用 ellipsize 避免撞到 pill）
-  const textRight = pillX - 12;
+  const textRight = pillX - 14;
   const textMaxW = textRight - LAYOUT.textLeft;
-  ctx.font = `22px ${FONT}`;
+  ctx.font = `30px ${FONT}`;
   ctx.fillStyle = "white";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   const displayText = ellipsizeText(ctx, m.text, textMaxW);
-  ctx.fillText(displayText, LAYOUT.textLeft, yTop + 52);
+  ctx.fillText(displayText, LAYOUT.textLeft, yTop + 70);
 }
 
 const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(

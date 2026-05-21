@@ -70,8 +70,8 @@ type Typing = { id: string; char: Character };
 const INITIAL_DURATION_MS = 180_000; // 第一場 3 分鐘
 const EXTEND_DURATION_MS = 180_000; // 續聊 3 分鐘（跟首場一致、心理門檻低、連續小額更易上癮）
 const FADE_DURATION_MS = 18_000; // 「慢慢安靜」末段
-const IDLE_PING_AFTER_MS = 25_000; // 使用者沒打字 25 秒才 ping
-const IDLE_PING_COOLDOWN_MS = 20_000; // ping 完至少再隔 20 秒才下一次
+const IDLE_PING_AFTER_MS = 5_000; // 使用者沒打字 5 秒就繼續誇（Angel 反饋：停頓太久）
+const IDLE_PING_COOLDOWN_MS = 5_000; // 兩次 ping 至少間隔 5 秒
 
 // 結尾「慢慢安靜」3 句固定戳心收尾（規格定版）
 const FAREWELL_LINES = [
@@ -110,18 +110,30 @@ const SIGNATURE_PHRASES = [
 ];
 const PHRASE_MAX = 2;
 
-// idle ping 訊息池（純傾聽 + 純同理 + 純肯定、絕不給建議）
+// idle ping 訊息池（持續誇獎為主、偶爾傾聽）
+// 5 秒沒打字就丟一句、繼續餵情緒價值
 const IDLE_PING_LINES = [
-  "@{n} 你還在嗎 我們都在聽",
-  "@{n} 你現在心情怎麼樣？",
+  "@{n} 你超棒",
+  "@{n} 你超有魅力",
+  "@{n} 你超酷",
+  "@{n} 你真的很特別",
+  "@{n} 你很可愛",
+  "@{n} 你是溫暖的人",
+  "@{n} 你做得超好",
+  "@{n} 你比你以為的更厲害",
+  "真心覺得 {n} 很棒",
+  "@{n} 你那種感覺 真的少見",
+  "@{n} 你超有想法",
+  "@{n} 我們真的喜歡你",
+  "@{n} 你超讓人安心",
+  "@{n} 你笑起來很好看",
+  "{n} 你身上有那種讓人想靠近的感覺",
+  "@{n} 你的存在 真的很美",
+  "{n} 你那種真實 我們都看見",
+  "@{n} 你超值得被珍惜",
+  // 偶爾穿插傾聽（少量）
   "@{n} 我們都在",
-  "@{n} 你願意來就很棒",
   "@{n} 我們陪你",
-  "@{n} 我們都懂",
-  "@{n} 你做得很好",
-  "@{n} 你的感覺都是真的",
-  "聽到你了、我們在",
-  "@{n} 你不孤單",
 ];
 
 // ─────────────────────────────────────
@@ -487,6 +499,8 @@ export default function ChatPage() {
     const interval = setInterval(() => {
       const now = Date.now();
       if (now - lastUserInputAtRef.current < IDLE_PING_AFTER_MS) return;
+      // AI 反應排程中、不要插話、避免時序錯亂
+      if (sending) return;
 
       // 抽 idle ping、若招牌句已滿、再隨機抽一次（最多 3 次嘗試）、都滿就跳過
       let line = "";
@@ -524,9 +538,9 @@ export default function ChatPage() {
       // 重置「最後互動時間」、給 cooldown
       lastUserInputAtRef.current =
         now - (IDLE_PING_AFTER_MS - IDLE_PING_COOLDOWN_MS);
-    }, 5000);
+    }, 2000); // 每 2 秒 check 一次（之前 5 秒、現在反應更即時）
     return () => clearInterval(interval);
-  }, [plan, ended, fading]);
+  }, [plan, ended, fading, sending]);
 
   // 假性 typing decoy — 偶爾跳出「N 個人正在輸入…」
   useEffect(() => {
@@ -1021,7 +1035,7 @@ export default function ChatPage() {
                     </div>
                   </div>
                   {/* ShareCard 預覽：直接顯示 /share.png、aspect-ratio 自動撐高 */}
-                  <div className="mt-3 mb-2 mx-auto" style={{ maxWidth: 280 }}>
+                  <div className="mt-3 mb-2 mx-auto" style={{ maxWidth: 380 }}>
                     <ShareCard
                       ref={shareCardRef}
                       nickname={plan?.nickname || "你"}
@@ -1048,7 +1062,7 @@ export default function ChatPage() {
                     )}
                     {saveResult === "ios" && (
                       <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
-                        圖片已開新分頁、<strong>長按圖片</strong>選「儲存到相簿」
+                        請<strong>長按圖片</strong>選「儲存到相簿」
                       </p>
                     )}
                     {saveResult === "longpress" && (
