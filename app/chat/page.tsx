@@ -80,6 +80,25 @@ const FAREWELL_LINES = [
   "她剛剛那句話 我有點放不下",
 ];
 
+// 招牌正向句 — 整場最多出現 2 次、超過跳過（避免「你的感覺都是真的」一直重複跳針）
+const SIGNATURE_PHRASES = [
+  "你的感覺都是真的",
+  "你願意說出來就是勇敢",
+  "你做得很好",
+  "我們都在聽",
+  "我們都懂",
+  "我們陪你",
+  "你不孤單",
+  "聽到你了",
+  "你已經很棒",
+  "你比你以為的更好",
+  "我們真的懂",
+  "你的存在就是答案",
+  "我們在這",
+  "我們看見你了",
+];
+const PHRASE_MAX = 2;
+
 // idle ping 訊息池（純傾聽 + 純同理 + 純肯定、絕不給建議）
 const IDLE_PING_LINES = [
   "@{n} 你還在嗎 我們都在聽",
@@ -146,6 +165,22 @@ export default function ChatPage() {
   const sessionStartRef = useRef<number>(Date.now());
   const sessionDurationRef = useRef<number>(INITIAL_DURATION_MS);
   const lastUserInputAtRef = useRef<number>(Date.now());
+  // 招牌句出現次數：整場最多 PHRASE_MAX 次、超過跳過
+  const phraseCountRef = useRef<Record<string, number>>({});
+
+  // 檢查訊息是否還能放（招牌句 ≤ PHRASE_MAX 次）
+  // side effect: 若返回 true、會 increment count
+  const shouldKeepMessage = (text: string): boolean => {
+    for (const phrase of SIGNATURE_PHRASES) {
+      if (text.includes(phrase)) {
+        const count = phraseCountRef.current[phrase] || 0;
+        if (count >= PHRASE_MAX) return false;
+        phraseCountRef.current[phrase] = count + 1;
+        return true;
+      }
+    }
+    return true;
+  };
 
   // 所有 setTimeout 都登記到這個 ref — unmount / 結束時一次清光
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -307,6 +342,7 @@ export default function ChatPage() {
     sessionStartRef.current = Date.now();
     sessionDurationRef.current = INITIAL_DURATION_MS;
     lastUserInputAtRef.current = Date.now();
+    phraseCountRef.current = {}; // 新場 reset 招牌句計數
 
     plan.joinSchedule.forEach((j, idx) => {
       schedule(() => {
@@ -335,7 +371,11 @@ export default function ChatPage() {
       ]);
     }, plan.bulkJoin.at);
 
-    plan.openingScheduled.forEach((evt, idx) => {
+    // 開場 8 句先 filter 招牌句重複的、再排程
+    const filteredOpening = plan.openingScheduled.filter((evt) =>
+      shouldKeepMessage(renderText(evt.text, plan.nickname))
+    );
+    filteredOpening.forEach((evt, idx) => {
       const typingDelay = typingDurationFor(evt.text);
       const showTypingAt = Math.max(0, evt.at - typingDelay);
       const tid = `to-${idx}-${sessionStartRef.current}`;
@@ -411,8 +451,18 @@ export default function ChatPage() {
       const now = Date.now();
       if (now - lastUserInputAtRef.current < IDLE_PING_AFTER_MS) return;
 
-      const line =
-        IDLE_PING_LINES[Math.floor(Math.random() * IDLE_PING_LINES.length)];
+      // 抽 idle ping、若招牌句已滿、再隨機抽一次（最多 3 次嘗試）、都滿就跳過
+      let line = "";
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const candidate =
+          IDLE_PING_LINES[Math.floor(Math.random() * IDLE_PING_LINES.length)];
+        const rendered = renderText(candidate, plan.nickname);
+        if (shouldKeepMessage(rendered)) {
+          line = candidate;
+          break;
+        }
+      }
+      if (!line) return; // 都試過、本輪 skip
       const char = pickAny(plan.chars);
       const dur = typingDurationFor(line);
       const stamp = Date.now();
@@ -556,10 +606,15 @@ export default function ChatPage() {
       /* 用 fallback */
     }
 
+    // 先 filter 招牌句已超過 PHRASE_MAX 次的、再排程
+    const filteredReactions = reactions.filter((line) =>
+      shouldKeepMessage(renderText(line.text, plan.nickname))
+    );
+
     // 順序顯示 reactions（每句之間 350-1600ms gap）
     let lastId: string | null = null;
     let cursor = 600;
-    reactions.forEach((line, idx) => {
+    filteredReactions.forEach((line, idx) => {
       const char = line.requiresGender
         ? pickByGender(plan.chars, line.requiresGender, lastId ?? undefined)
         : pickAny(plan.chars, lastId ?? undefined);

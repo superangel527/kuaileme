@@ -18,27 +18,28 @@ type Props = {
   totalLikes?: number;
 };
 
-const BASE_SRC = "/share.png";
+// ?v=2 — 強制 Netlify CDN / 瀏覽器重抓新版（不再 cache 舊版有 Kai/Emma 的圖）
+const BASE_SRC = "/share.png?v=2";
 
-// share.png 1024×1536 內「聊天截圖區」座標（trial-and-error、可微調）
+// share.png 1024×1536 內「聊天截圖區」座標（按新版空白框位置量、可再微調）
 const LAYOUT = {
   // 標籤「聊天室剛剛這樣聊 {nickname}…」位置
-  labelX: 105,
-  labelY: 745,
-  labelFontPx: 24,
+  labelX: 130,
+  labelY: 775,
+  labelFontPx: 22,
   // 4 個訊息卡片
-  msgStartY: 790,
-  msgHeight: 90,
-  msgGap: 6,
-  msgLeft: 95,
-  msgRight: 929, // 1024 - 95
+  msgStartY: 815,
+  msgHeight: 76,
+  msgGap: 4,
+  msgLeft: 105,
+  msgRight: 920,
   // avatar
-  avatarRadius: 30,
-  avatarCx: 145, // x 中心
+  avatarRadius: 26,
+  avatarCx: 148,
   // text / name
-  textLeft: 200,
+  textLeft: 195,
   // ♥ pill
-  pillRight: 909, // 右邊界
+  pillRight: 905,
 };
 
 const FONT = `-apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
@@ -114,11 +115,11 @@ function drawMessage(
   ctx.fillText(initial, cx, cy);
 
   // 名字（左對齊、淡白）
-  ctx.font = `500 22px ${FONT}`;
+  ctx.font = `500 19px ${FONT}`;
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(m.char.name, LAYOUT.textLeft, yTop + 32);
+  ctx.fillText(m.char.name, LAYOUT.textLeft, yTop + 26);
 
   // ♥ pill — 右側、先量寬度
   const likeText = `${m.likeCount.toLocaleString()}`;
@@ -147,12 +148,12 @@ function drawMessage(
   // 訊息文字（左對齊、白、用 ellipsize 避免撞到 pill）
   const textRight = pillX - 12;
   const textMaxW = textRight - LAYOUT.textLeft;
-  ctx.font = `26px ${FONT}`;
+  ctx.font = `22px ${FONT}`;
   ctx.fillStyle = "white";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   const displayText = ellipsizeText(ctx, m.text, textMaxW);
-  ctx.fillText(displayText, LAYOUT.textLeft, yTop + 62);
+  ctx.fillText(displayText, LAYOUT.textLeft, yTop + 52);
 }
 
 const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(
