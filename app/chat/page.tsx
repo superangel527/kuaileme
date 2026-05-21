@@ -162,6 +162,18 @@ function typingDurationFor(text: string): number {
   return 900 + Math.random() * 600;
 }
 
+// 訊息按讚數：分 3 級隨機
+//   爆紅（25%）：600-3000  →  share.png 4K 那種感覺
+//   中熱（30%）：80-300    →  有人氣
+//   普通（45%）：5-55      →  日常
+// 確保每場都有「幾個爆紅」+ 大多正常的真實感
+function genLikeCount(): number {
+  const r = Math.random();
+  if (r < 0.25) return 600 + Math.floor(Math.random() * 2400);
+  if (r < 0.55) return 80 + Math.floor(Math.random() * 220);
+  return 5 + Math.floor(Math.random() * 50);
+}
+
 // ─────────────────────────────────────
 // Component
 // ─────────────────────────────────────
@@ -441,7 +453,7 @@ export default function ChatPage() {
             char: evt.char,
             text: renderText(evt.text, plan.nickname),
             ts: new Date(),
-            likeCount: 5 + Math.floor(Math.random() * 25),
+            likeCount: genLikeCount(),
           },
         ]);
       }, evt.at);
@@ -531,7 +543,7 @@ export default function ChatPage() {
             char,
             text: renderText(line, plan.nickname),
             ts: new Date(),
-            likeCount: 2 + Math.floor(Math.random() * 8),
+            likeCount: genLikeCount(),
           },
         ]);
       }, dur);
@@ -698,7 +710,7 @@ export default function ChatPage() {
             char,
             text: renderText(line.text, plan.nickname),
             ts: new Date(),
-            likeCount: 8 + Math.floor(Math.random() * 30),
+            likeCount: genLikeCount(),
           },
         ]);
       }, cursor);
@@ -836,12 +848,34 @@ export default function ChatPage() {
 
   const shareItems: ShareMsg[] = useMemo(() => {
     if (!ended || !plan) return [];
-    return items
+    const picked = items
       .filter((it): it is MsgItem => it.kind === "msg")
       .filter(isShareWorthy)
       .sort((a, b) => b.likeCount - a.likeCount)
-      .slice(0, 4) // 4 個訊息對齊新 share.png 設計（之前 3 個太空）
+      .slice(0, 4)
       .map((m) => ({ char: m.char, text: m.text, likeCount: m.likeCount }));
+
+    // 不夠 4 句、用固定誇句補位（share.png 不能少於 4 句）
+    if (picked.length >= 4) return picked;
+    const fallbackChars = [
+      { id: "fb-kai", name: "Kai", age: 26, identity: "公關", gender: "M" as const, initial: "K", gradient: ["#8b5cf6", "#6d28d9"] as [string, string] },
+      { id: "fb-emma", name: "Emma", age: 24, identity: "翻譯", gender: "F" as const, initial: "E", gradient: ["#ff5fa2", "#e11d8a"] as [string, string] },
+      { id: "fb-tony", name: "Tony", age: 28, identity: "工程師", gender: "M" as const, initial: "T", gradient: ["#fbbf24", "#d97706"] as [string, string] },
+      { id: "fb-axiang", name: "阿翔", age: 25, identity: "自己創業", gender: "M" as const, initial: "翔", gradient: ["#4ea1f7", "#2563eb"] as [string, string] },
+    ];
+    const fallbackMessages: ShareMsg[] = [
+      { char: fallbackChars[0], text: "認識你真好", likeCount: 2847 },
+      { char: fallbackChars[1], text: "真心覺得你很棒", likeCount: 1903 },
+      { char: fallbackChars[2], text: "你真是一位有趣的人", likeCount: 3216 },
+      { char: fallbackChars[3], text: "我覺得你能帶給大家溫暖", likeCount: 2173 },
+    ];
+    // 補到 4 個
+    const result = [...picked];
+    for (const fb of fallbackMessages) {
+      if (result.length >= 4) break;
+      result.push(fb);
+    }
+    return result;
   }, [ended, items, plan]);
 
   const totalLikes = useMemo(() => {
@@ -1003,7 +1037,7 @@ export default function ChatPage() {
                 <div className="text-[12.5px] text-white/45 mb-1.5">
                   聊天室慢慢安靜下來了……
                 </div>
-                <h2 className="text-[20px] sm:text-[22px] text-white font-bold leading-snug">
+                <h2 className="text-[24px] sm:text-[26px] text-white font-bold leading-snug">
                   聊天室裡，
                   <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan">
@@ -1027,16 +1061,16 @@ export default function ChatPage() {
               {shareItems.length > 0 && (
                 <>
                   <div className="mt-7 text-center">
-                    <div className="text-[12.5px] text-white/55 mb-1">
+                    <div className="text-[14px] text-white/60 mb-1.5">
                       聊天室裡、有幾句話被很多人按了愛心
                     </div>
-                    <div className="text-[11px] text-glow-pink/85">
+                    <div className="text-[13.5px] text-glow-pink/90 font-medium">
                       ↓ 保存這張圖、有些話值得被留下來
                     </div>
                   </div>
-                  {/* ShareCard 預覽：外層加 gradient 相框、把分享圖跟介面區隔開 */}
+                  {/* ShareCard 預覽：外層加明顯漸層相框 + 厚邊 + 大陰影 */}
                   <div
-                    className="mt-4 mb-3 mx-auto p-2 rounded-3xl bg-gradient-to-br from-glow-pink/20 via-glow-violet/15 to-glow-cyan/15 border border-white/[0.1] shadow-[0_16px_48px_-12px_rgba(255,95,162,0.35)]"
+                    className="mt-4 mb-3 mx-auto p-3 rounded-3xl bg-gradient-to-br from-glow-pink/35 via-glow-violet/30 to-glow-cyan/25 border-2 border-glow-pink/40 shadow-[0_20px_60px_-10px_rgba(255,95,162,0.55)]"
                     style={{ maxWidth: 380 }}
                   >
                     <ShareCard

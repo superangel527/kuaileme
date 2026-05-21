@@ -259,7 +259,7 @@ export default function HomePage() {
         </div>
 
         {/* 法律連結 + 安心專線（情緒類產品必要） */}
-        <div className="mt-6 text-center text-[13px] text-white/45 space-y-3">
+        <div className="mt-6 text-center text-[11.5px] text-white/40 space-y-2">
           <p className="space-x-2">
             <a
               href="/privacy"
@@ -282,23 +282,23 @@ export default function HomePage() {
               免責聲明
             </a>
           </p>
-          <p className="text-[12.5px] text-white/40 leading-relaxed">
+          <p className="text-[11px] text-white/35 leading-relaxed">
             🫂 衛福部安心專線{" "}
             <a
               href="tel:1925"
-              className="text-white/65 font-medium hover:text-white/90"
+              className="text-white/60 font-medium hover:text-white/90"
             >
               1925
             </a>{" "}
             ・ 自殺防治專線{" "}
             <a
               href="tel:1995"
-              className="text-white/65 font-medium hover:text-white/90"
+              className="text-white/60 font-medium hover:text-white/90"
             >
               1995
             </a>
             <br />
-            <span className="text-white/30">（24 小時免費、有人陪你說話）</span>
+            <span className="text-white/25">（24 小時免費、有人陪你說話）</span>
           </p>
         </div>
       </div>

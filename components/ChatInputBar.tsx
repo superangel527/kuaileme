@@ -63,7 +63,7 @@ export default function ChatInputBar({
           placeholder={placeholder}
           disabled={disabled}
           aria-label="輸入訊息"
-          className="flex-1 resize-none rounded-2xl bg-white/[0.06] border border-white/[0.1] px-4 py-3 text-[15px] text-white placeholder:text-white/35 leading-snug focus:outline-none focus:border-glow-pink/50 focus:ring-1 focus:ring-glow-pink/30 transition disabled:opacity-50"
+          className="flex-1 resize-none rounded-2xl bg-white/[0.06] border-2 border-glow-pink/40 px-4 py-3 text-[15px] text-white placeholder:text-white/40 leading-snug focus:outline-none focus:border-glow-pink/80 focus:ring-1 focus:ring-glow-pink/40 transition disabled:opacity-50"
           style={{ maxHeight: "120px", minHeight: "48px" }}
         />
         <button

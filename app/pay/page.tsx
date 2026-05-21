@@ -304,14 +304,14 @@ export default function PayPage() {
             })}
           </div>
 
-          {/* 中央 Logo — 飄浮發光 */}
+          {/* 中央 Logo — 飄浮發光、放大 */}
           <div className="flex-1 flex items-center justify-center my-4">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-glow-pink/45 via-glow-violet/45 to-glow-cyan/35 blur-2xl scale-125 animate-pulse-glow" />
               <img
                 src="/logo.png"
                 alt="誇了嗎"
-                className="relative w-28 h-auto animate-drift"
+                className="relative w-40 h-auto animate-drift"
               />
             </div>
           </div>
@@ -343,10 +343,10 @@ export default function PayPage() {
             </div>
           </div>
 
-          {/* 小提醒 */}
-          <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-glow-pink/[0.08] to-glow-violet/[0.08] border border-white/[0.1]">
-            <span className="text-[13px] mt-px">✨</span>
-            <span className="text-[12px] text-white/80 leading-relaxed font-medium">
+          {/* 小提醒 — 字放大 */}
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-gradient-to-r from-glow-pink/[0.08] to-glow-violet/[0.08] border border-white/[0.1]">
+            <span className="text-[16px] mt-px">✨</span>
+            <span className="text-[15px] text-white/90 leading-relaxed font-medium">
               在這個聊天室裡，你就是大主角！
             </span>
           </div>
@@ -362,20 +362,20 @@ export default function PayPage() {
       <button
         onClick={() => router.back()}
         aria-label="返回"
-        className="self-start text-white/55 hover:text-white text-[14px] flex items-center gap-1 -ml-1 mb-3"
+        className="self-start text-white/55 hover:text-white text-[14px] flex items-center gap-1 -ml-1 mb-1"
       >
         ‹ 返回
       </button>
 
       <div className="max-w-md mx-auto w-full flex flex-col">
-        {/* Logo */}
-        <div className="flex justify-center pt-1 pb-3">
+        {/* Logo — 放大、貼近返回鍵 */}
+        <div className="flex justify-center pt-0 pb-2">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-glow-pink/35 via-glow-violet/35 to-glow-cyan/30 blur-2xl scale-110" />
             <img
               src="/logo.png"
               alt="誇了嗎"
-              className="relative w-[110px] h-auto drop-shadow-[0_8px_30px_rgba(255,95,162,0.3)]"
+              className="relative w-[150px] h-auto drop-shadow-[0_8px_30px_rgba(255,95,162,0.35)]"
             />
           </div>
         </div>
