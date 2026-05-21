@@ -1067,9 +1067,7 @@ export default function ChatPage() {
                     )}
                     {saveResult === "longpress" && (
                       <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
-                        LINE 內無法下載 —<br />
-                        請<strong>長按上方預覽圖</strong>選「儲存到相簿」<br />
-                        或點右上「⋯」用 Safari 打開
+                        請<strong>長按圖片</strong>選「儲存到相簿」
                       </p>
                     )}
                     {saveResult === "error" && (
