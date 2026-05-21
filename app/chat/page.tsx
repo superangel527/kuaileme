@@ -80,22 +80,33 @@ const FAREWELL_LINES = [
   "她剛剛那句話 我有點放不下",
 ];
 
-// 招牌正向句 — 整場最多出現 2 次、超過跳過（避免「你的感覺都是真的」一直重複跳針）
+// 招牌核心 phrase — 整場每個 phrase 最多出現 2 次、超過跳過
+// 用 substring 比對（不管前後綴）、抓「你心情怎麼樣？」「@美 你心情怎麼樣 我們都在聽」都當同一句
 const SIGNATURE_PHRASES = [
-  "你的感覺都是真的",
-  "你願意說出來就是勇敢",
-  "你做得很好",
+  "心情怎麼樣",
+  "心情如何",
+  "說出來就是勇敢",
+  "願意說出來",
+  "做得很好",
   "我們都在聽",
+  "都在聽",
   "我們都懂",
   "我們陪你",
   "你不孤單",
   "聽到你了",
-  "你已經很棒",
-  "你比你以為的更好",
+  "已經很棒",
+  "你比你以為",
   "我們真的懂",
-  "你的存在就是答案",
+  "存在就是答案",
   "我們在這",
-  "我們看見你了",
+  "我們看見你",
+  "你不用一個人",
+  "感覺都是真的",
+  "你已經很努力",
+  "願意來",
+  "你的心情我們收到",
+  "你說的我們都收到",
+  "你比你想的",
 ];
 const PHRASE_MAX = 2;
 
@@ -157,9 +168,10 @@ export default function ChatPage() {
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
   const [savingImage, setSavingImage] = useState(false);
-  // 保存圖片結果訊息：null / "success" / "ios"（已開新分頁、提示長按）/ "error"
+  // 保存圖片結果訊息
+  // null / "success" / "ios"（已開新分頁、提示長按）/ "longpress"（LINE WebView、提示長按預覽圖）/ "error"
   const [saveResult, setSaveResult] = useState<
-    null | "success" | "ios" | "error"
+    null | "success" | "ios" | "longpress" | "error"
   >(null);
 
   const sessionStartRef = useRef<number>(Date.now());
@@ -168,16 +180,40 @@ export default function ChatPage() {
   // 招牌句出現次數：整場最多 PHRASE_MAX 次、超過跳過
   const phraseCountRef = useRef<Record<string, number>>({});
 
-  // 檢查訊息是否還能放（招牌句 ≤ PHRASE_MAX 次）
-  // side effect: 若返回 true、會 increment count
+  // 檢查訊息是否還能放（雙重判斷）：
+  //   1. 整句 normalize（去 @暱稱 / 標點 / 空白）後比對、整場最多 PHRASE_MAX 次
+  //   2. 招牌核心 phrase substring 比對、每個 phrase 整場最多 PHRASE_MAX 次
+  // 兩者都通過才放
+  // side effect: 若返回 true、會 increment 所有 matched count
   const shouldKeepMessage = (text: string): boolean => {
+    // dry check：先確認都不超過、不 mutate
+    const matchedPhrases: string[] = [];
     for (const phrase of SIGNATURE_PHRASES) {
       if (text.includes(phrase)) {
         const count = phraseCountRef.current[phrase] || 0;
         if (count >= PHRASE_MAX) return false;
-        phraseCountRef.current[phrase] = count + 1;
-        return true;
+        matchedPhrases.push(phrase);
       }
+    }
+
+    // 整句 normalize 比對
+    const normalized = text
+      .replace(/^@\S+\s*/, "")
+      .replace(/[，。！？、…\s]/g, "");
+    const exactKey = "__exact:" + normalized;
+    if (normalized) {
+      const exactCount = phraseCountRef.current[exactKey] || 0;
+      if (exactCount >= PHRASE_MAX) return false;
+    }
+
+    // 通過、increment 所有 count
+    for (const phrase of matchedPhrases) {
+      phraseCountRef.current[phrase] =
+        (phraseCountRef.current[phrase] || 0) + 1;
+    }
+    if (normalized) {
+      phraseCountRef.current[exactKey] =
+        (phraseCountRef.current[exactKey] || 0) + 1;
     }
     return true;
   };
@@ -813,13 +849,18 @@ export default function ChatPage() {
       const isIOS =
         /iPad|iPhone|iPod/.test(ua) &&
         !(window as { MSStream?: unknown }).MSStream;
+      // LINE / IG / FB 內嵌 WebView — window.open 通常被 block
+      const isLine = /Line\//i.test(ua);
+      const isInApp = isLine || /FBAN|FBAV|Instagram/i.test(ua);
 
-      // 從 ShareCard 內的 <img> 拿真實 src（已是含暱稱 overlay 的 blob URL）
-      // 若 ShareCard 還沒生圖完成、fallback 到原 /share.png
+      // 從 ShareCard 內的 <img> 拿真實 src（已是含本場 4 句 overlay 的 blob URL）
       const innerImg = shareCardRef.current?.querySelector("img");
       const src = innerImg?.src || "/share.png";
 
-      if (isIOS) {
+      if (isInApp) {
+        // LINE / IG 內嵌瀏覽器：開新分頁會被 block、直接提示長按上方預覽圖
+        setSaveResult("longpress");
+      } else if (isIOS) {
         // iOS Safari：<a download> 不支援、改開新分頁讓使用者長按存
         window.open(src, "_blank");
         setSaveResult("ios");
@@ -996,6 +1037,13 @@ export default function ChatPage() {
                     {saveResult === "ios" && (
                       <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
                         圖片已開新分頁、<strong>長按圖片</strong>選「儲存到相簿」
+                      </p>
+                    )}
+                    {saveResult === "longpress" && (
+                      <p className="mt-2 text-center text-[12px] text-glow-pink leading-relaxed animate-fade-in-up">
+                        LINE 內無法下載 —<br />
+                        請<strong>長按上方預覽圖</strong>選「儲存到相簿」<br />
+                        或點右上「⋯」用 Safari 打開
                       </p>
                     )}
                     {saveResult === "error" && (
