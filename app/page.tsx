@@ -257,6 +257,50 @@ export default function HomePage() {
             現在，你是聊天室裡的主角
           </p>
         </div>
+
+        {/* 法律連結 + 安心專線（情緒類產品必要） */}
+        <div className="mt-6 text-center text-[11.5px] text-white/40 space-y-2">
+          <p className="space-x-2">
+            <a
+              href="/privacy"
+              className="hover:text-white/75 underline-offset-4 hover:underline"
+            >
+              隱私權政策
+            </a>
+            <span className="text-white/25">·</span>
+            <a
+              href="/terms"
+              className="hover:text-white/75 underline-offset-4 hover:underline"
+            >
+              服務條款
+            </a>
+            <span className="text-white/25">·</span>
+            <a
+              href="/disclaimer"
+              className="hover:text-white/75 underline-offset-4 hover:underline"
+            >
+              免責聲明
+            </a>
+          </p>
+          <p className="text-[11px] text-white/35 leading-relaxed">
+            🫂 衛福部安心專線{" "}
+            <a
+              href="tel:1925"
+              className="text-white/60 font-medium hover:text-white/90"
+            >
+              1925
+            </a>{" "}
+            ・ 自殺防治專線{" "}
+            <a
+              href="tel:1995"
+              className="text-white/60 font-medium hover:text-white/90"
+            >
+              1995
+            </a>
+            <br />
+            <span className="text-white/25">（24 小時免費、有人陪你說話）</span>
+          </p>
+        </div>
       </div>
     </main>
   );
