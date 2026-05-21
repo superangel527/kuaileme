@@ -204,6 +204,8 @@ export async function POST(req: NextRequest) {
   let nickname = "";
   let userReply = "";
   let userGender: "M" | "F" | null = null;
+  let userTopic = ""; // 首頁原始 topic、推角色用
+  let userHistory: string[] = []; // 累積打字歷史、推角色用
 
   try {
     const body = await req.json();
@@ -214,6 +216,10 @@ export async function POST(req: NextRequest) {
     userGender = body?.userGender === "M" || body?.userGender === "F"
       ? body.userGender
       : null;
+    userTopic = typeof body?.userTopic === "string" ? body.userTopic : "";
+    userHistory = Array.isArray(body?.userHistory)
+      ? body.userHistory.filter((x: unknown) => typeof x === "string").slice(-10)
+      : [];
   } catch {
     return NextResponse.json({ messages: [], source: "parse_error" });
   }
@@ -232,8 +238,11 @@ export async function POST(req: NextRequest) {
 
   const userPrompt = `原主題: ${topic}
 主題關鍵字: ${keywords.join(", ") || "無"}
+使用者首頁打的話: "${userTopic.slice(0, 100)}"
 使用者暱稱: "${nickname.slice(0, 16) || pronoun}"
 使用者剛在聊天室打的話: "${userReply.slice(0, 100)}"
+使用者過去打過的所有話（歷史紀錄、由舊到新）:
+${userHistory.map((h, i) => `  ${i + 1}. "${h.slice(0, 100)}"`).join("\n") || "  （無）"}
 使用者性別: ${userGender === "M" ? "男性（第三人稱必須用『他』、絕不性別對比）" : "女性 / 未知（第三人稱用『她』）"}
 
 請生成 6-8 句聊天室即時反應：
@@ -245,6 +254,16 @@ export async function POST(req: NextRequest) {
 - 第三人稱永遠用「${pronoun}」、不要混用「她/他」
 - 純正向、純擁抱、不能批判 / 嘲弄
 - **只傾聽 + 只同理 + 只肯定、絕不給建議**（不能用「你可以 X / 你應該 X / 你不用 X / 試試 X / 慢慢 X / 別 X / 又在 X / 心疼」）
+
+## 🔴 重要：必須從歷史推測使用者「角色」、訊息必須 match 該角色
+
+仔細看上面的「使用者首頁打的話」+「歷史紀錄」、推測使用者的身份：
+- 包含「當爸 / 要當爸 / 爸爸 / 我老婆」→ 使用者是**爸爸 / 男性**
+- 包含「當媽 / 要當媽 / 媽媽 / 我老公 / 懷孕」→ 使用者是**媽媽 / 女性**
+- 包含「我老公 / 我先生」→ 使用者**有老公**（女）
+- 包含「我老婆 / 我太太」→ 使用者**有老婆**（男）
+
+絕對不要把角色搞錯（例如使用者說「我要當爸爸」、聊天室不能說「你會是很棒的媽媽」）。
 
 只輸出 JSON。`;
 

@@ -185,14 +185,7 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(function ShareCard(
         // 底圖
         ctx.drawImage(img, 0, 0);
 
-        // 標籤「聊天室剛剛這樣聊 {nickname}…」
-        const nick = (nickname || "你").slice(0, 12);
-        const labelText = `聊天室剛剛這樣聊 ${nick}…`;
-        ctx.font = `500 ${LAYOUT.labelFontPx}px ${FONT}`;
-        ctx.fillStyle = "rgba(255,255,255,0.55)";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        ctx.fillText(labelText, LAYOUT.labelX, LAYOUT.labelY);
+        // 不再 overlay 標籤 — 底圖已經有「聊天室剛剛這樣聊…」、避免字疊字
 
         // 4 個動態訊息
         const msgs = (messages || []).slice(0, 4);

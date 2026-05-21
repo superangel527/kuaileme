@@ -241,14 +241,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(fallback("keyword_fallback"));
   }
 
-  // 從 text 偵測使用者性別（如果寫了「男的」「男生」「直男」「我哥」等就視為男性）
-  const maleHints = /(我是男的|我男的|我男生|我是男生|我哥|男的啦|我直男|我是直男|^男生|男的怎)/;
-  const detectedGender: "M" | "F" | null = maleHints.test(text) ? "M" : null;
+  // 從 text 偵測使用者性別（擴大關鍵字、含角色 keyword）
+  const maleHints =
+    /(我是男的|我男的|我男生|我是男生|我哥|我弟|男的啦|我直男|我是直男|^男生|男的怎|我爸|爸爸|當爸|要當爸|我是爸|我老婆|我太太|有老婆)/;
+  const femaleHints =
+    /(我是女的|我女的|我女生|我是女生|我妹|我姐|我媽|媽媽|當媽|要當媽|我是媽|我老公|我先生|有老公|我懷孕|懷孕了)/;
+  let detectedGender: "M" | "F" | null = null;
+  if (maleHints.test(text)) detectedGender = "M";
+  else if (femaleHints.test(text)) detectedGender = "F";
   const pronoun = detectedGender === "M" ? "他" : "她";
 
   const userPrompt = `使用者輸入: "${text.slice(0, 100)}"
 ${pronoun}的暱稱: "${nickname.slice(0, 16) || pronoun}"
-使用者性別: ${detectedGender === "M" ? "男性（第三人稱必須用『他』、不能用『她』、絕不性別對比）" : "女性 / 未知（第三人稱用『她』）"}
+使用者性別: ${detectedGender === "M" ? "男性（第三人稱必須用『他』、不能用『她』、絕不性別對比）" : detectedGender === "F" ? "女性（第三人稱用『她』）" : "未知（第三人稱用『她』）"}
+
+## 🔴 重要：必須從使用者輸入推測「角色」、訊息必須 match 該角色
+
+仔細看上面的「使用者輸入」、推測使用者身份：
+- 包含「當爸 / 要當爸 / 爸爸 / 我老婆」→ 使用者是**爸爸 / 男性**
+- 包含「當媽 / 要當媽 / 媽媽 / 我老公 / 懷孕」→ 使用者是**媽媽 / 女性**
+- 包含「我老公 / 我先生」→ 使用者**有老公**（女）
+- 包含「我老婆 / 我太太」→ 使用者**有老婆**（男）
+
+絕對不要把角色搞錯（例如使用者說「我要當爸爸」、開場不能說「你會是很棒的媽媽」）。
 
 只輸出 JSON（含 topic、keywords、tone、openingMessages × 8）。
 第三人稱請永遠用「${pronoun}」、絕對不要混用。

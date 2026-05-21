@@ -164,6 +164,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false); // 使用者打字後、AI 群演回覆中
   const [extending, setExtending] = useState(false); // 續聊付款中
   const [userGender, setUserGender] = useState<"M" | "F" | null>(null); // 性別偵測
+  const userHistoryRef = useRef<string[]>([]); // 使用者打字累積、給 AI 推測角色用
 
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
@@ -587,14 +588,22 @@ export default function ChatPage() {
     setSending(true);
     lastUserInputAtRef.current = Date.now();
 
-    // 性別偵測：使用者打「我是男的」/「男生」之類、之後 AI 改用「他」
-    const maleHints = /(我是男的|我男的|我男生|我是男生|我哥|男的啦|我直男|我是直男|男生啦)/;
-    const detectedGender: "M" | "F" | null = maleHints.test(text)
-      ? "M"
-      : userGender;
-    if (detectedGender === "M" && userGender !== "M") {
-      setUserGender("M");
+    // 性別偵測（擴大關鍵字、含角色 keyword）：
+    //   男性指標：男的 / 男生 / 直男 / 我哥 / 弟弟 / 爸爸 / 當爸 / 我老婆 / 我太太
+    //   女性指標：女的 / 女生 / 我妹 / 我姐 / 媽媽 / 當媽 / 我老公 / 我先生 / 懷孕
+    const maleHints =
+      /(我是男的|我男的|我男生|我是男生|我哥|我弟|男的啦|我直男|我是直男|男生啦|我爸|爸爸|當爸|要當爸|我是爸|我老婆|我太太|有老婆)/;
+    const femaleHints =
+      /(我是女的|我女的|我女生|我是女生|我妹|我姐|我媽|媽媽|當媽|要當媽|我是媽|我老公|我先生|有老公|我懷孕|懷孕了)/;
+    let detectedGender: "M" | "F" | null = userGender;
+    if (maleHints.test(text)) detectedGender = "M";
+    else if (femaleHints.test(text)) detectedGender = "F";
+    if (detectedGender && detectedGender !== userGender) {
+      setUserGender(detectedGender);
     }
+
+    // 累積使用者打字歷史、給 AI 推測角色用（爸爸/媽媽/工程師/學生 等）
+    userHistoryRef.current = [...userHistoryRef.current, text].slice(-10);
 
     const stamp = Date.now();
     setItems((arr) => [
@@ -619,7 +628,10 @@ export default function ChatPage() {
           keywords: plan.keywords,
           nickname: plan.nickname,
           userReply: text,
-          userGender: detectedGender, // 傳 M 或 null、AI 用對人稱
+          userGender: detectedGender, // 傳 M / F / null
+          // 首頁原 topic + 使用者所有打過的話 — AI 推測角色 / 性別用
+          userTopic: plan.topic,
+          userHistory: userHistoryRef.current,
         }),
       });
       if (resp.ok) {
@@ -814,7 +826,7 @@ export default function ChatPage() {
       .filter((it): it is MsgItem => it.kind === "msg")
       .filter(isShareWorthy)
       .sort((a, b) => b.likeCount - a.likeCount)
-      .slice(0, 3)
+      .slice(0, 4) // 4 個訊息對齊新 share.png 設計（之前 3 個太空）
       .map((m) => ({ char: m.char, text: m.text, likeCount: m.likeCount }));
   }, [ended, items, plan]);
 
