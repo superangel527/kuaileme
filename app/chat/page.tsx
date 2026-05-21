@@ -80,6 +80,58 @@ const FAREWELL_LINES = [
   "她剛剛那句話 我有點放不下",
 ];
 
+// 固定 4 個角色 + 4 句話 — 跟 share.png 設計圖完全對齊
+// share.png 上寫死了「Kai 說認識你真好」等等、聊天室必須真的出現這 4 句
+// 才不會出現「分享圖跟聊天室對不上」的破綻
+const FIXED_SHARE_CHARS: Character[] = [
+  {
+    id: "share-kai",
+    name: "Kai",
+    age: 26,
+    identity: "公關",
+    gender: "M",
+    initial: "K",
+    gradient: ["#8b5cf6", "#6d28d9"],
+  },
+  {
+    id: "share-emma",
+    name: "Emma",
+    age: 24,
+    identity: "翻譯",
+    gender: "F",
+    initial: "E",
+    gradient: ["#ff5fa2", "#e11d8a"],
+  },
+  {
+    id: "share-tony",
+    name: "Tony",
+    age: 28,
+    identity: "工程師",
+    gender: "M",
+    initial: "T",
+    gradient: ["#fbbf24", "#d97706"],
+  },
+  {
+    id: "share-axiang",
+    name: "阿翔",
+    age: 25,
+    identity: "自己創業",
+    gender: "M",
+    initial: "翔",
+    gradient: ["#4ea1f7", "#2563eb"],
+  },
+];
+
+const FIXED_SHARE_MESSAGES: { char: Character; text: string; likeCount: number }[] = [
+  { char: FIXED_SHARE_CHARS[0], text: "認識你真好", likeCount: 2847 },
+  { char: FIXED_SHARE_CHARS[1], text: "真心覺得你很棒", likeCount: 1903 },
+  { char: FIXED_SHARE_CHARS[2], text: "你真是一位有趣的人", likeCount: 3216 },
+  { char: FIXED_SHARE_CHARS[3], text: "我覺得你能帶給大家溫暖", likeCount: 2173 },
+];
+
+const FIXED_SHARE_START_MS = 32_000; // 開場 8 句後、約 32 秒開始排這 4 句
+const FIXED_SHARE_GAP_MS = 2_500; // 每 ~2.5 秒一句
+
 // idle ping 訊息池（沒打字時觸發、純圍繞她的存在）
 const IDLE_PING_LINES = [
   "@{n} 還在嗎",
@@ -353,6 +405,32 @@ export default function ChatPage() {
           },
         ]);
       }, evt.at);
+    });
+
+    // 強制排程：Kai / Emma / Tony / 阿翔 4 句固定話、跟 share.png 對齊
+    // 32s 起每 2.5 秒一句、共 4 句、結束在 ~40s
+    FIXED_SHARE_MESSAGES.forEach((m, idx) => {
+      const at = FIXED_SHARE_START_MS + idx * FIXED_SHARE_GAP_MS;
+      const dur = typingDurationFor(m.text);
+      const tid = `tsm-${idx}-${sessionStartRef.current}`;
+      schedule(() => {
+        setTypings((t) => [...t, { id: tid, char: m.char }]);
+      }, Math.max(0, at - dur));
+      schedule(() => {
+        setTypings((t) => t.filter((x) => x.id !== tid));
+        setItems((arr) => [
+          ...arr,
+          {
+            kind: "msg",
+            // id 用 sm- prefix（share message）、isShareWorthy 不會過濾
+            id: `sm-${idx}-${sessionStartRef.current}`,
+            char: m.char,
+            text: m.text,
+            ts: new Date(),
+            likeCount: m.likeCount,
+          },
+        ]);
+      }, at);
     });
 
     // 「慢慢安靜」階段：sessionDuration - 18 秒
