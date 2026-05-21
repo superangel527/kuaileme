@@ -139,8 +139,6 @@ export default function ChatPage() {
   const [saveResult, setSaveResult] = useState<
     null | "success" | "ios" | "error"
   >(null);
-  // ShareCard 真實 render 高度 * 0.6 — 動態算、避免外層容器有空白
-  const [cardWrapHeight, setCardWrapHeight] = useState(540);
 
   const sessionStartRef = useRef<number>(Date.now());
   const sessionDurationRef = useRef<number>(INITIAL_DURATION_MS);
@@ -391,6 +389,9 @@ export default function ChatPage() {
       setTypings([]);
       setEnded(true);
       // 不清 paid_at — 因為使用者可能要按續聊（要保留聊天室不被踢回 /pay）
+      // 清掉所有殘留 schedule（避免 reactions / decoy typing 在 ended 後 fire、
+      // 造成 ShareCard 上方又冒新訊息的「時間線倒退」感）
+      clearAllTimeouts();
     }, INITIAL_DURATION_MS);
 
     return () => {
@@ -460,26 +461,6 @@ export default function ChatPage() {
     scrollEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, [items.length, typings.length, ended]);
 
-  // ShareCard 高度監聽 — 動態算 wrapper 高度、避免下方空白
-  useEffect(() => {
-    if (!ended || typeof window === "undefined") return;
-    const el = shareCardRef.current;
-    if (!el) return;
-    const update = () => {
-      const h = el.offsetHeight;
-      if (h > 0) setCardWrapHeight(h * 0.6);
-    };
-    update();
-    let observer: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(update);
-      observer.observe(el);
-    }
-    return () => {
-      observer?.disconnect();
-    };
-  }, [ended]);
-
   // 愛心慢慢增加
   useEffect(() => {
     if (ended) return;
@@ -511,7 +492,9 @@ export default function ChatPage() {
   // handleSend: 使用者打字 → 顯示 UserReply → fetch AI 即時 6-8 句反應
   // ─────────────────────────────────────
   const handleSend = async (text: string) => {
-    if (!plan || ended || sending) return;
+    // fading 階段（最後 18 秒）也不再接受打字、避免 reactions 拖到 ended 後才 fire、
+    // 造成 ShareCard 上方又冒新訊息的「時間線倒退」感
+    if (!plan || ended || fading || sending) return;
     setSending(true);
     lastUserInputAtRef.current = Date.now();
 
@@ -689,6 +672,8 @@ export default function ChatPage() {
     schedule(() => {
       setTypings([]);
       setEnded(true);
+      // 同初始流程 — 清掉殘留 schedule、避免時間線倒退
+      clearAllTimeouts();
     }, EXTEND_DURATION_MS);
   };
 
@@ -751,47 +736,27 @@ export default function ChatPage() {
     };
   }, [ended, items]);
 
-  const handleSaveImage = async () => {
-    if (savingImage || !shareCardRef.current) return;
+  const handleSaveImage = () => {
+    if (savingImage) return;
     setSavingImage(true);
     setSaveResult(null);
     try {
-      const { toPng } = await import("html-to-image");
-      // 加 10 秒 timeout、避免 iOS Safari 上 toPng hang 住
-      const dataUrl = await Promise.race([
-        toPng(shareCardRef.current, {
-          pixelRatio: 2,
-          cacheBust: true,
-          backgroundColor: "#0b0b1a",
-        }),
-        new Promise<string>((_, reject) =>
-          setTimeout(() => reject(new Error("生圖超時")), 10000)
-        ),
-      ]);
+      const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+      const isIOS =
+        /iPad|iPhone|iPod/.test(ua) &&
+        !(window as { MSStream?: unknown }).MSStream;
 
-      // iOS Safari 對動態 <a download> 不支援、會 navigate 而不下載
-      // 改成開新分頁、讓使用者長按存到相簿
-      const ua = navigator.userAgent || "";
-      const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as { MSStream?: unknown }).MSStream;
-
+      // 直接給靜態 /share.png — 比 html-to-image 穩、iOS 也能存
       if (isIOS) {
-        const win = window.open();
-        if (win) {
-          win.document.write(
-            `<html><head><title>誇了嗎 - 分享圖</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#0b0b1a;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;height:auto;display:block}p{position:fixed;top:12px;left:0;right:0;text-align:center;color:#fff;font-family:-apple-system,sans-serif;font-size:13px;background:rgba(0,0,0,0.5);padding:8px;margin:0}</style></head><body><p>長按圖片 → 儲存到相簿</p><img src="${dataUrl}" alt="誇了嗎分享圖" /></body></html>`
-          );
-          win.document.close();
-          setSaveResult("ios");
-        } else {
-          // popup blocked
-          setSaveResult("error");
-        }
+        // iOS Safari：<a download> 不支援、改開新分頁讓使用者長按存
+        window.open("/share.png", "_blank");
+        setSaveResult("ios");
       } else {
-        // Desktop / Android — 用 <a download>
+        // Desktop / Android：用 <a download> 直接下載
         const link = document.createElement("a");
         const nick = plan?.nickname || "我";
         link.download = `誇了嗎_${nick}_${Date.now()}.png`;
-        link.href = dataUrl;
+        link.href = "/share.png";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -802,7 +767,6 @@ export default function ChatPage() {
       setSaveResult("error");
     } finally {
       setSavingImage(false);
-      // 8 秒後自動清掉提示
       setTimeout(() => setSaveResult(null), 8000);
     }
   };
@@ -931,31 +895,16 @@ export default function ChatPage() {
                       ↓ 保存這張圖、跟朋友炫耀一下
                     </div>
                   </div>
-                  {/* ShareCard 預覽：width 540 + scale(0.6)、wrapper 高度跟著 ShareCard 真實 render 算 */}
-                  <div
-                    className="mt-3 mb-2 mx-auto overflow-hidden rounded-2xl border border-white/[0.08]"
-                    style={{
-                      width: 324,
-                      height: cardWrapHeight,
-                      transition: "height 200ms ease-out",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 540,
-                        transform: "scale(0.6)",
-                        transformOrigin: "top left",
-                      }}
-                    >
-                      <ShareCard
-                        ref={shareCardRef}
-                        nickname={plan?.nickname || "你"}
-                        mainQuote={mainQuoteData.text}
-                        mainQuoteAuthor={mainQuoteData.author}
-                        messages={shareItems}
-                        totalLikes={totalLikes}
-                      />
-                    </div>
+                  {/* ShareCard 預覽：直接顯示 /share.png、aspect-ratio 自動撐高 */}
+                  <div className="mt-3 mb-2 mx-auto" style={{ maxWidth: 280 }}>
+                    <ShareCard
+                      ref={shareCardRef}
+                      nickname={plan?.nickname || "你"}
+                      mainQuote={mainQuoteData.text}
+                      mainQuoteAuthor={mainQuoteData.author}
+                      messages={shareItems}
+                      totalLikes={totalLikes}
+                    />
                   </div>
 
                   <div className="mt-4">
@@ -1000,11 +949,11 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* 底部 — 結束時隱藏 */}
+      {/* 底部 — 結束時隱藏。fading 階段也 disable、避免時間線倒退 */}
       {!ended && (
         <ChatInputBar
           onSend={handleSend}
-          disabled={sending}
+          disabled={sending || fading}
           placeholder={
             fading ? "聊天室慢慢安靜了…" : "說點什麼、讓他們圍著你…"
           }
