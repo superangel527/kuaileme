@@ -1031,11 +1031,14 @@ export default function ChatPage() {
                       聊天室裡、有幾句話被很多人按了愛心
                     </div>
                     <div className="text-[11px] text-glow-pink/85">
-                      ↓ 保存這張圖、跟朋友炫耀一下
+                      ↓ 保存這張圖、有些話值得被留下來
                     </div>
                   </div>
-                  {/* ShareCard 預覽：直接顯示 /share.png、aspect-ratio 自動撐高 */}
-                  <div className="mt-3 mb-2 mx-auto" style={{ maxWidth: 380 }}>
+                  {/* ShareCard 預覽：外層加 gradient 相框、把分享圖跟介面區隔開 */}
+                  <div
+                    className="mt-4 mb-3 mx-auto p-2 rounded-3xl bg-gradient-to-br from-glow-pink/20 via-glow-violet/15 to-glow-cyan/15 border border-white/[0.1] shadow-[0_16px_48px_-12px_rgba(255,95,162,0.35)]"
+                    style={{ maxWidth: 380 }}
+                  >
                     <ShareCard
                       ref={shareCardRef}
                       nickname={plan?.nickname || "你"}

@@ -83,12 +83,12 @@ export default function HomePage() {
       <BottomGlow />
 
       <div className="max-w-md mx-auto">
-        {/* Logo — 放大 1.5x */}
-        <div className="flex justify-center pt-2 pb-2">
+        {/* Logo — 再放大、上方空位收緊 */}
+        <div className="flex justify-center pt-0 pb-1">
           <img
             src="/logo.png"
             alt="誇了嗎"
-            className="w-[120px] h-auto drop-shadow-[0_8px_24px_rgba(255,95,162,0.35)]"
+            className="w-[170px] h-auto drop-shadow-[0_8px_28px_rgba(255,95,162,0.4)]"
           />
         </div>
 
@@ -135,7 +135,7 @@ export default function HomePage() {
           </h1>
 
           {/* 副標 — 偷看感 */}
-          <p className="mt-4 text-center text-[14px] text-white/70 italic leading-relaxed">
+          <p className="mt-4 text-center text-[16px] text-white/75 italic leading-relaxed">
             <span className="text-white/90">有人好像很在意你剛剛那句話。</span>
           </p>
         </div>
@@ -145,9 +145,9 @@ export default function HomePage() {
           {TRUST_LINES.map((t) => (
             <div
               key={t.text}
-              className="inline-flex items-center gap-2 text-[12.5px] text-white/65"
+              className="inline-flex items-center gap-2 text-[14.5px] text-white/70"
             >
-              <span className={`${t.color} text-[14px]`}>{t.icon}</span>
+              <span className={`${t.color} text-[16px]`}>{t.icon}</span>
               {t.text}
             </div>
           ))}
@@ -157,8 +157,8 @@ export default function HomePage() {
         <div className="mt-6 rounded-3xl bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.1] p-4 space-y-5 shadow-[0_8px_30px_rgba(139,92,246,0.12)]">
           {/* 話題 — 步驟 1 */}
           <div>
-            <label className="flex items-center gap-2 text-[14px] text-white font-medium mb-2.5">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-glow-pink to-glow-violet text-[11px] font-semibold">
+            <label className="flex items-center gap-2 text-[15.5px] text-white font-medium mb-3">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-glow-pink to-glow-violet text-[12.5px] font-semibold">
                 1
               </span>
               丟一句話，看看他們會怎麼聊你
@@ -170,22 +170,22 @@ export default function HomePage() {
                 placeholder="點下面快速心情、或自己打一句…"
                 rows={3}
                 maxLength={30}
-                className="w-full resize-none rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3 text-[15px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
+                className="w-full resize-none rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3.5 text-[16.5px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
               />
-              <span className="absolute right-3 bottom-2 text-[10.5px] text-white/35">
+              <span className="absolute right-3 bottom-2 text-[12px] text-white/40">
                 {topic.length}/30
               </span>
             </div>
 
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap gap-2">
               {QUICK_TOPICS.map((q) => (
                 <button
                   key={q.text}
                   type="button"
                   onClick={() => setTopic(q.text)}
-                  className="text-[12.5px] px-2.5 py-1.5 rounded-full bg-white/[0.07] hover:bg-white/[0.12] active:scale-[0.97] border border-white/[0.1] text-white/85 transition inline-flex items-center gap-1"
+                  className="text-[14px] px-3 py-2 rounded-full bg-white/[0.07] hover:bg-white/[0.12] active:scale-[0.97] border border-white/[0.1] text-white/85 transition inline-flex items-center gap-1.5"
                 >
-                  <span>{q.emoji}</span>
+                  <span className="text-[15px]">{q.emoji}</span>
                   {q.text}
                 </button>
               ))}
@@ -196,8 +196,8 @@ export default function HomePage() {
 
           {/* 暱稱 — 步驟 2 */}
           <div>
-            <label className="flex items-center gap-2 text-[14px] text-white font-medium mb-2.5">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-glow-violet to-glow-cyan text-[11px] font-semibold">
+            <label className="flex items-center gap-2 text-[15.5px] text-white font-medium mb-3">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-glow-violet to-glow-cyan text-[12.5px] font-semibold">
                 2
               </span>
               聊天室裡，大家要怎麼叫你？
@@ -214,9 +214,9 @@ export default function HomePage() {
                 maxLength={8}
                 autoComplete="off"
                 enterKeyHint="go"
-                className="w-full rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
+                className="w-full rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3.5 text-[16.5px] text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10.5px] text-white/35">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-white/40">
                 {nickname.length}/8
               </span>
             </div>
@@ -227,7 +227,7 @@ export default function HomePage() {
         <button
           onClick={handleEnter}
           disabled={!canEnter}
-          className="mt-5 w-full py-5 rounded-2xl text-white text-[18px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_10px_40px_-8px_rgba(255,95,162,0.55)] active:scale-[0.98] disabled:opacity-35 disabled:shadow-none transition flex items-center justify-center gap-3"
+          className="mt-5 w-full py-5 rounded-2xl text-white text-[19.5px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_10px_40px_-8px_rgba(255,95,162,0.55)] active:scale-[0.98] disabled:opacity-35 disabled:shadow-none transition flex items-center justify-center gap-3"
         >
           <span className="flex-1 text-center pl-7">
             {going ? "正在進入聊天室…" : "NT$19 看他們怎麼聊你"}
@@ -237,29 +237,29 @@ export default function HomePage() {
 
         {/* 安全 pill */}
         <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2">
-          <span className="inline-flex items-center gap-1 text-[11.5px] text-white/55">
+          <span className="inline-flex items-center gap-1.5 text-[13px] text-white/60">
             💬 即時聊天室
           </span>
-          <span className="inline-flex items-center gap-1 text-[11.5px] text-white/55">
+          <span className="inline-flex items-center gap-1.5 text-[13px] text-white/60">
             🔒 匿名模式
           </span>
-          <span className="inline-flex items-center gap-1 text-[11.5px] text-white/55">
+          <span className="inline-flex items-center gap-1.5 text-[13px] text-white/60">
             🛡 不會留下紀錄
           </span>
         </div>
 
         {/* 匿名 footer 卡片 — 兩行低語 */}
-        <div className="mt-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-3.5 text-center">
-          <div className="inline-flex items-center gap-1.5 text-[12.5px] text-white/75 font-medium">
+        <div className="mt-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-4 text-center">
+          <div className="inline-flex items-center gap-1.5 text-[14px] text-white/80 font-medium">
             🔒 放心，這裡不會留下紀錄
           </div>
-          <p className="mt-1.5 text-[12px] text-white/45">
+          <p className="mt-2 text-[13px] text-white/50">
             現在，你是聊天室裡的主角
           </p>
         </div>
 
         {/* 法律連結 + 安心專線（情緒類產品必要） */}
-        <div className="mt-6 text-center text-[11.5px] text-white/40 space-y-2">
+        <div className="mt-6 text-center text-[13px] text-white/45 space-y-3">
           <p className="space-x-2">
             <a
               href="/privacy"
@@ -282,23 +282,23 @@ export default function HomePage() {
               免責聲明
             </a>
           </p>
-          <p className="text-[11px] text-white/35 leading-relaxed">
+          <p className="text-[12.5px] text-white/40 leading-relaxed">
             🫂 衛福部安心專線{" "}
             <a
               href="tel:1925"
-              className="text-white/60 font-medium hover:text-white/90"
+              className="text-white/65 font-medium hover:text-white/90"
             >
               1925
             </a>{" "}
             ・ 自殺防治專線{" "}
             <a
               href="tel:1995"
-              className="text-white/60 font-medium hover:text-white/90"
+              className="text-white/65 font-medium hover:text-white/90"
             >
               1995
             </a>
             <br />
-            <span className="text-white/25">（24 小時免費、有人陪你說話）</span>
+            <span className="text-white/30">（24 小時免費、有人陪你說話）</span>
           </p>
         </div>
       </div>
