@@ -746,17 +746,21 @@ export default function ChatPage() {
         /iPad|iPhone|iPod/.test(ua) &&
         !(window as { MSStream?: unknown }).MSStream;
 
-      // 直接給靜態 /share.png — 比 html-to-image 穩、iOS 也能存
+      // 從 ShareCard 內的 <img> 拿真實 src（已是含暱稱 overlay 的 blob URL）
+      // 若 ShareCard 還沒生圖完成、fallback 到原 /share.png
+      const innerImg = shareCardRef.current?.querySelector("img");
+      const src = innerImg?.src || "/share.png";
+
       if (isIOS) {
         // iOS Safari：<a download> 不支援、改開新分頁讓使用者長按存
-        window.open("/share.png", "_blank");
+        window.open(src, "_blank");
         setSaveResult("ios");
       } else {
         // Desktop / Android：用 <a download> 直接下載
         const link = document.createElement("a");
         const nick = plan?.nickname || "我";
         link.download = `誇了嗎_${nick}_${Date.now()}.png`;
-        link.href = "/share.png";
+        link.href = src;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
