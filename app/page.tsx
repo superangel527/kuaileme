@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import BottomGlow from "@/components/BottomGlow";
+import MicButton from "@/components/MicButton";
 
 type IconProps = React.SVGProps<SVGSVGElement>;
 
@@ -172,7 +173,19 @@ export default function HomePage() {
                 maxLength={30}
                 className="w-full resize-none rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3.5 text-[16.5px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
               />
-              <span className="absolute right-3 bottom-2 text-[12px] text-white/40">
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MicButton
+                  currentText={topic}
+                  onUpdate={(t) => setTopic(t.slice(0, 30))}
+                  size={34}
+                />
+                <span className="text-[11.5px] text-white/45">
+                  也可以點麥克風講
+                </span>
+              </div>
+              <span className="text-[12px] text-white/40">
                 {topic.length}/30
               </span>
             </div>

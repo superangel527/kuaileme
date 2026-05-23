@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, FormEvent, KeyboardEvent } from "react";
+import MicButton from "./MicButton";
 
 // 半自由互動：使用者可隨時打字、AI 群演圍繞回應
 export default function ChatInputBar({
@@ -53,7 +54,20 @@ export default function ChatInputBar({
       // 加大底部 padding、避免在 iOS 上被 home indicator / 系統手勢區誤觸
       className="shrink-0 px-3 pt-3 pb-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.5rem))] border-t border-white/5 bg-bg-deep/92 backdrop-blur-md"
     >
-      <div className="flex items-end gap-2.5 max-w-md mx-auto">
+      <div className="flex items-end gap-2 max-w-md mx-auto">
+        <MicButton
+          currentText={text}
+          onUpdate={(t) => {
+            setText(t);
+            // textarea 高度跟隨
+            if (inputRef.current) {
+              inputRef.current.style.height = "auto";
+              inputRef.current.style.height =
+                Math.min(inputRef.current.scrollHeight, 120) + "px";
+            }
+          }}
+          size={48}
+        />
         <textarea
           ref={inputRef}
           value={text}
