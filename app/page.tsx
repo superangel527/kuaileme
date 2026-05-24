@@ -171,23 +171,21 @@ export default function HomePage() {
                 placeholder="點下面快速心情、或自己打一句…"
                 rows={3}
                 maxLength={30}
-                className="w-full resize-none rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 py-3.5 text-[16.5px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
+                className="w-full resize-none rounded-2xl bg-bg-deep/90 border-2 border-glow-pink/40 px-4 pt-3.5 pb-12 text-[16.5px] leading-relaxed text-white placeholder-white/40 focus:outline-none focus:border-glow-pink focus:bg-bg-deep transition shadow-[inset_0_2px_8px_rgba(0,0,0,0.35)]"
               />
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MicButton
-                  currentText={topic}
-                  onUpdate={(t) => setTopic(t.slice(0, 30))}
-                  size={34}
-                />
-                <span className="text-[11.5px] text-white/45">
-                  也可以點麥克風講
+              {/* 框內底部：左下 mic、右下字數 */}
+              <div className="absolute left-2.5 right-3 bottom-2 flex items-center justify-between pointer-events-none">
+                <div className="pointer-events-auto">
+                  <MicButton
+                    currentText={topic}
+                    onUpdate={(t) => setTopic(t.slice(0, 30))}
+                    size={32}
+                  />
+                </div>
+                <span className="text-[12px] text-white/40 pointer-events-auto">
+                  {topic.length}/30
                 </span>
               </div>
-              <span className="text-[12px] text-white/40">
-                {topic.length}/30
-              </span>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">

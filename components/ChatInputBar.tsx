@@ -55,31 +55,35 @@ export default function ChatInputBar({
       className="shrink-0 px-3 pt-3 pb-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.5rem))] border-t border-white/5 bg-bg-deep/92 backdrop-blur-md"
     >
       <div className="flex items-end gap-2 max-w-md mx-auto">
-        <MicButton
-          currentText={text}
-          onUpdate={(t) => {
-            setText(t);
-            // textarea 高度跟隨
-            if (inputRef.current) {
-              inputRef.current.style.height = "auto";
-              inputRef.current.style.height =
-                Math.min(inputRef.current.scrollHeight, 120) + "px";
-            }
-          }}
-          size={48}
-        />
-        <textarea
-          ref={inputRef}
-          value={text}
-          onChange={handleInput}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          placeholder={placeholder}
-          disabled={disabled}
-          aria-label="輸入訊息"
-          className="flex-1 resize-none rounded-2xl bg-white/[0.06] border-2 border-glow-pink/40 px-4 py-3 text-[15px] text-white placeholder:text-white/40 leading-snug focus:outline-none focus:border-glow-pink/80 focus:ring-1 focus:ring-glow-pink/40 transition disabled:opacity-50"
-          style={{ maxHeight: "120px", minHeight: "48px" }}
-        />
+        <div className="flex-1 relative">
+          <textarea
+            ref={inputRef}
+            value={text}
+            onChange={handleInput}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-label="輸入訊息"
+            className="w-full resize-none rounded-2xl bg-white/[0.06] border-2 border-glow-pink/40 pl-12 pr-4 py-3 text-[15px] text-white placeholder:text-white/40 leading-snug focus:outline-none focus:border-glow-pink/80 focus:ring-1 focus:ring-glow-pink/40 transition disabled:opacity-50"
+            style={{ maxHeight: "120px", minHeight: "48px" }}
+          />
+          {/* mic 在 textarea 左下角內 */}
+          <div className="absolute left-1.5 bottom-1.5">
+            <MicButton
+              currentText={text}
+              onUpdate={(t) => {
+                setText(t);
+                if (inputRef.current) {
+                  inputRef.current.style.height = "auto";
+                  inputRef.current.style.height =
+                    Math.min(inputRef.current.scrollHeight, 120) + "px";
+                }
+              }}
+              size={36}
+            />
+          </div>
+        </div>
         <button
           type="submit"
           disabled={!text.trim() || sending || disabled}

@@ -54,7 +54,12 @@ export function useSpeechRecognition(
       webkitSpeechRecognition?: SpeechRecognitionConstructor;
     }).webkitSpeechRecognition;
 
-    if (!SR) {
+    // LINE / IG / FB 內嵌 WebView：API 物件可能存在但實際無法用（權限被擋）
+    // 直接視為不支援、不顯示 mic 按鈕
+    const ua = navigator.userAgent || "";
+    const isInAppWebview = /Line\/|FBAN|FBAV|Instagram/i.test(ua);
+
+    if (!SR || isInAppWebview) {
       setSupported(false);
       return;
     }
