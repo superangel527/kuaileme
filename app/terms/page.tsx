@@ -20,6 +20,17 @@ export default function TermsPage() {
         本服務為「<strong>AI 情緒陪伴與娛樂互動體驗</strong>」、
         提供模擬聊天室之 AI 對話、誇獎與情緒互動內容。
       </p>
+      <ul>
+        <li>
+          <strong>體驗時長：</strong>每場 3 分鐘
+        </li>
+        <li>
+          <strong>履約方式：</strong>付款完成後系統即時自動開通、立即可使用、無需等待
+        </li>
+        <li>
+          <strong>服務型態：</strong>純線上、純數位內容、即時消費型服務、無實體商品、無寄送
+        </li>
+      </ul>
       <p>
         <strong>本服務性質為娛樂與情緒體驗、不構成醫療、心理諮商、
         法律、財務或任何專業諮詢服務</strong>。
@@ -36,15 +47,21 @@ export default function TermsPage() {
 
       <h2>三、付款與退費</h2>
       <ul>
-        <li>本服務採單次付費制（NT$19 / 場、可續聊 NT$19 / 場）</li>
-        <li>付款由第三方金流業者處理</li>
+        <li>
+          <strong>計費方式：單次小額付費制</strong>（每場 NT$19 / 3 分鐘、可加購續聊 NT$19 / 3 分鐘）
+        </li>
+        <li>
+          <strong>無自動續訂、無訂閱制、無會員費、無隱藏費用</strong>
+        </li>
+        <li>付款由第三方金流業者（PayUni 統一金流）處理、本網站不接觸信用卡資訊</li>
         <li>
           <strong>
-            因屬數位內容 / 即時消費型服務、依消保法規定、付款完成後不接受退費
+            因屬數位內容 / 即時消費型服務、依消費者保護法施行細則第 17 條規定、
+            不適用 7 天鑑賞期、付款完成後不接受退費
           </strong>
         </li>
         <li>付款前請確認自身需求、避免爭議</li>
-        <li>如有金流爭議、請聯繫 support@superangel527.com</li>
+        <li>如有金流爭議、請寄信 support@superangel527.com 聯繫客服</li>
       </ul>
 
       <h2>四、使用者責任</h2>
