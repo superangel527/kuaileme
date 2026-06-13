@@ -43,11 +43,22 @@ async function handle(req: NextRequest) {
     return NextResponse.redirect(`${SITE_URL}/?error=payment_invalid`);
   }
 
+  // 完整 log 給 debug 用、之後可砍
+  console.log("[payuni/return] full data:", JSON.stringify(result.data));
+
   // 確認 Status：PayUni 個人版通常 SUCCESS = 付款成功
   const status = (result.data?.Status || "").toUpperCase();
   if (status !== "SUCCESS" && status !== "OK") {
     console.warn("[payuni/return] payment not success:", status, result.data);
-    return NextResponse.redirect(`${SITE_URL}/?error=payment_failed`);
+    // 把錯誤訊息塞進 URL、debug 用
+    const debugQs = new URLSearchParams();
+    debugQs.set("error", "payment_failed");
+    debugQs.set("status", status);
+    if (result.data?.Message)
+      debugQs.set("msg", String(result.data.Message).slice(0, 200));
+    if (result.data?.StatusInfo)
+      debugQs.set("info", String(result.data.StatusInfo).slice(0, 200));
+    return NextResponse.redirect(`${SITE_URL}/?${debugQs.toString()}`);
   }
 
   // ✅ 付款成功 — 看訂單前綴決定 redirect
