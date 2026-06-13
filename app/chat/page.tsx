@@ -727,13 +727,55 @@ export default function ChatPage() {
   };
 
   // ─────────────────────────────────────
-  // handleExtend: 「再聊 3 分鐘 NT$19」→ 走付款流程
+  // handleExtend: 「再聊 3 分鐘 NT$19」→ 看 PAYMENT_MODE 走真實 PayUni 或 fake
   // ─────────────────────────────────────
-  // 註：PayUni 真金流續聊待 PayUni 過審後再做、現在用 fake 流程
+  const paymentMode = process.env.NEXT_PUBLIC_PAYMENT_MODE || "fake";
   const handleExtend = async () => {
     if (extending) return;
     setExtending(true);
-    // 模擬付款過場
+
+    // 真實 PayUni 流程
+    if (paymentMode === "payuni") {
+      try {
+        const resp = await fetch("/api/payuni/create-order", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            nickname: plan?.nickname || "",
+            topic: plan?.topic || "",
+            mode: "extend", // 關鍵：訂單號 ext_ 前綴、return 後 redirect /chat?extend=1
+          }),
+        });
+        const data = await resp.json();
+        if (!data?.ok || !data?.actionUrl || !data?.fields) {
+          throw new Error(data?.error || "建單失敗");
+        }
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = data.actionUrl;
+        form.style.display = "none";
+        for (const [key, value] of Object.entries(data.fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      } catch (e) {
+        alert(
+          "續聊付款建單失敗：" +
+            (e instanceof Error ? e.message : String(e)) +
+            "\n請稍後再試或聯繫客服。"
+        );
+        setExtending(false);
+        return;
+      }
+    }
+
+    // 假流程（PAYMENT_MODE=fake、開發測試用）
     await new Promise((r) => setTimeout(r, 900));
     extendSession();
   };

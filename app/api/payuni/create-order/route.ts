@@ -31,24 +31,29 @@ export async function POST(req: NextRequest) {
 
   let nickname = "";
   let topic = "";
+  let mode: "initial" | "extend" = "initial";
   try {
     const body = await req.json();
     nickname = typeof body?.nickname === "string" ? body.nickname.slice(0, 16) : "";
     topic = typeof body?.topic === "string" ? body.topic.slice(0, 30) : "";
+    if (body?.mode === "extend") mode = "extend";
   } catch {
     /* empty body OK */
   }
 
-  const orderNo = generateOrderNo();
+  // 續聊用 ext 前綴、首次付款用 kl 前綴；return route 偵測前綴決定 redirect
+  const orderNo = generateOrderNo(mode === "extend" ? "ext" : "kl");
+  const description =
+    mode === "extend" ? "誇了嗎 - 續聊 3 分鐘" : "誇了嗎 - 3 分鐘聊天室";
 
   try {
     const payload = buildOrderPayload({
       merTradeNo: orderNo,
       amount: PRICE,
-      description: "誇了嗎 - 3 分鐘聊天室",
+      description,
       returnUrl: `${SITE_URL}/api/payuni/return`,
       notifyUrl: `${SITE_URL}/api/payuni/notify`,
-      backUrl: `${SITE_URL}/`,
+      backUrl: mode === "extend" ? `${SITE_URL}/chat` : `${SITE_URL}/`,
     });
 
     // 把 orderNo + 使用者資料暫存到 cookie、後續驗證用

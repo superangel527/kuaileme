@@ -155,8 +155,9 @@ export function parsePayUniResponse(
   }
 }
 
-// 產唯一訂單號（kl_yyyyMMddHHmmss_4 碼隨機）
-export function generateOrderNo(): string {
+// 產唯一訂單號（{prefix}{yyyyMMddHHmmss}{4 碼隨機}）
+// prefix 預設 "kl"（首次付款）、續聊用 "ext"（PayUni return 偵測 → redirect /chat?extend=1）
+export function generateOrderNo(prefix: string = "kl"): string {
   const now = new Date();
   const stamp =
     now.getFullYear().toString() +
@@ -166,5 +167,5 @@ export function generateOrderNo(): string {
     String(now.getMinutes()).padStart(2, "0") +
     String(now.getSeconds()).padStart(2, "0");
   const rand = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-  return `kl${stamp}${rand}`;
+  return `${prefix}${stamp}${rand}`;
 }

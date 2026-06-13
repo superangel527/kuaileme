@@ -50,9 +50,15 @@ async function handle(req: NextRequest) {
     return NextResponse.redirect(`${SITE_URL}/?error=payment_failed`);
   }
 
-  // ✅ 付款成功 — 設 cookie 標記、redirect 到 /chat
+  // ✅ 付款成功 — 看訂單前綴決定 redirect
+  //   "ext..." → 續聊（chat?extend=1、不重新開場、直接 +3 分鐘）
+  //   "kl..."  → 首次付款（chat?paid=1、開新場）
   const orderNo = result.data?.MerTradeNo || "";
-  const resp = NextResponse.redirect(`${SITE_URL}/chat?paid=1&order=${orderNo}`);
+  const isExtend = orderNo.startsWith("ext");
+  const redirectPath = isExtend
+    ? `${SITE_URL}/chat?extend=1&order=${orderNo}`
+    : `${SITE_URL}/chat?paid=1&order=${orderNo}`;
+  const resp = NextResponse.redirect(redirectPath);
 
   // kl_paid_at cookie — chat 頁讀取後 setLocalStorage
   resp.cookies.set("kl_paid_at", String(Date.now()), {
