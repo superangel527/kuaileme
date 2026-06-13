@@ -8,6 +8,8 @@ import { NextResponse } from "next/server";
 import { PAYUNI_CONFIGURED } from "@/lib/payuni";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // 只洩漏前 N 碼 + 後 N 碼、給 Angel 跟 PayUni 後台肉眼比對
 function preview(s: string, ends = 4): string {
