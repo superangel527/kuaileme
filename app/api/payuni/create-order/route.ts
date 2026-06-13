@@ -54,6 +54,15 @@ export async function POST(req: NextRequest) {
       returnUrl: `${SITE_URL}/api/payuni/return`,
       notifyUrl: `${SITE_URL}/api/payuni/notify`,
       backUrl: mode === "extend" ? `${SITE_URL}/chat` : `${SITE_URL}/`,
+      userEmail: "support@superangel527.com", // 預設客服 email（PayUni 有些情境要求必填）
+    });
+    // diagnostic log — Netlify Functions log 可看
+    console.log("[payuni/create-order]", {
+      mode,
+      orderNo,
+      amount: PRICE,
+      actionUrl: payload.actionUrl,
+      returnUrl: `${SITE_URL}/api/payuni/return`,
     });
 
     // 把 orderNo + 使用者資料暫存到 cookie、後續驗證用

@@ -12,7 +12,9 @@
 
 import crypto from "crypto";
 
-const PAYUNI_API_URL = "https://api.payuni.com.tw/api/upp";
+// PayUni form post endpoint — 可用環境變數 PAYUNI_ENDPOINT_URL 覆蓋
+const PAYUNI_API_URL =
+  process.env.PAYUNI_ENDPOINT_URL || "https://api.payuni.com.tw/api/upp";
 
 const HASH_KEY = process.env.PAYUNI_HASH_KEY ?? "";
 const HASH_IV = process.env.PAYUNI_HASH_IV ?? "";
