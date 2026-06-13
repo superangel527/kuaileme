@@ -23,18 +23,28 @@ export async function GET() {
   const iv = process.env.PAYUNI_HASH_IV || "";
   const mer = process.env.PAYUNI_MERCHANT_ID || "";
 
-  return NextResponse.json({
-    paymentMode: process.env.NEXT_PUBLIC_PAYMENT_MODE || "(not set)",
-    payuniConfigured: PAYUNI_CONFIGURED,
-    hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "(not set)",
-    // PayUni 設定預覽（前 4 / 後 4 碼、肉眼比對是否跟 PayUni 後台一致）
-    payuniMerId: mer,
-    payuniHashKeyPreview: preview(key, 4),
-    payuniHashIvPreview: preview(iv, 2),
-    // 額外 check：頭尾有沒有空白（最常見的貼錯）
-    keyHasWhitespace: key !== key.trim(),
-    ivHasWhitespace: iv !== iv.trim(),
-    timestamp: new Date().toISOString(),
-  });
+  return NextResponse.json(
+    {
+      paymentMode: process.env.NEXT_PUBLIC_PAYMENT_MODE || "(not set)",
+      payuniConfigured: PAYUNI_CONFIGURED,
+      hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "(not set)",
+      // PayUni 設定預覽（前 4 / 後 4 碼、肉眼比對是否跟 PayUni 後台一致）
+      payuniMerId: mer,
+      payuniHashKeyPreview: preview(key, 4),
+      payuniHashIvPreview: preview(iv, 2),
+      // 額外 check：頭尾有沒有空白（最常見的貼錯）
+      keyHasWhitespace: key !== key.trim(),
+      ivHasWhitespace: iv !== iv.trim(),
+      timestamp: new Date().toISOString(),
+    },
+    {
+      headers: {
+        // 強制不被 Netlify Edge / 瀏覽器 / CDN cache
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Netlify-CDN-Cache-Control": "no-store",
+        "CDN-Cache-Control": "no-store",
+      },
+    }
+  );
 }
