@@ -108,7 +108,7 @@ const SIGNATURE_PHRASES = [
   "你說的我們都收到",
   "你比你想的",
 ];
-const PHRASE_MAX = 2;
+const PHRASE_MAX = 1; // 整場 3 分鐘、每句完全不重複（Angel 反饋：時間短、重複很煩）
 
 // idle ping 訊息池（持續誇獎為主、偶爾傾聽）
 // 5 秒沒打字就丟一句、繼續餵情緒價值
