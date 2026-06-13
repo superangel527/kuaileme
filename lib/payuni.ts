@@ -72,13 +72,15 @@ export function verifyHashInfo(encryptedStr: string, hashFromPayUni: string): bo
   }
 }
 
-// 用 PHP-style http_build_query 編碼（PayUni 比較吃這個格式）
+// PHP http_build_query 風格 — PayUni 是 PHP-based、空格要用 `+` 不是 `%20`
+// 之前用 encodeURIComponent 直接編碼會讓 PayUni 解密後 parse 失敗（DEF01007 根因）
 function buildQuery(params: Record<string, string | number>): string {
   return Object.entries(params)
-    .map(
-      ([k, v]) =>
-        `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`
-    )
+    .map(([k, v]) => {
+      const ek = encodeURIComponent(k).replace(/%20/g, "+");
+      const ev = encodeURIComponent(String(v)).replace(/%20/g, "+");
+      return `${ek}=${ev}`;
+    })
     .join("&");
 }
 
