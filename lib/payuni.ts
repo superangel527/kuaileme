@@ -54,9 +54,11 @@ export function decryptInfo(ciphertext: string): string {
   return decrypted.toString("utf8");
 }
 
-// SHA256("HashKey=" + key + "&" + ciphertext + "&HashIV=" + iv) 大寫
+// PayUni 個人版實際用：SHA256(KEY + ENC + IV) 純 concat、大寫
+// 之前用 "HashKey=...&...&HashIV=..." 是另一版本格式、會被 reject (DEF01007)
+// 用純 concat 可通過 hash 驗證（reject code 變 DEF01002 表示通過 hash 進到下個檢查）
 export function makeHashInfo(encryptedStr: string): string {
-  const raw = `HashKey=${HASH_KEY}&${encryptedStr}&HashIV=${HASH_IV}`;
+  const raw = `${HASH_KEY}${encryptedStr}${HASH_IV}`;
   return crypto
     .createHash("sha256")
     .update(raw, "utf8")
