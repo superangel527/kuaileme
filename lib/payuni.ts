@@ -1,18 +1,20 @@
 /**
- * PayUni 統一金流 個人版 Universal API 1.x 整合
+ * PayUni 統一金流 個人版 Universal API 整合
  *
- * 加密：AES-256-CBC + PKCS7 padding、hex 編碼小寫
- * 簽章：SHA256(HashKey=...&...&HashIV=...) 大寫
+ * 演算法（按 PayUni 官方 PHP_SDK 對應）：
+ *   - 加密：AES-256-GCM、用商家固定 IV（16 bytes）、輸出 hex(base64(cipher)+":::"+base64(tag))
+ *   - 簽章：SHA256(KEY + EncryptInfo + IV) 大寫
+ *   - plaintext：PHP http_build_query 風格（空格 → +）
  *
  * 環境變數（Netlify 後台設）：
  *   PAYUNI_MERCHANT_ID — 商店代號
  *   PAYUNI_HASH_KEY    — 32 碼 AES key
  *   PAYUNI_HASH_IV     — 16 碼 AES IV
+ *   PAYUNI_ENDPOINT_URL — 選用、預設 https://api.payuni.com.tw/api/upp
  */
 
 import crypto from "crypto";
 
-// PayUni form post endpoint — 可用環境變數 PAYUNI_ENDPOINT_URL 覆蓋
 const PAYUNI_API_URL =
   process.env.PAYUNI_ENDPOINT_URL || "https://api.payuni.com.tw/api/upp";
 
@@ -25,38 +27,52 @@ export const PAYUNI_CONFIGURED =
 
 export const PAYUNI_API_ENDPOINT = PAYUNI_API_URL;
 
-// AES-256-CBC + PKCS7、hex 小寫
+// AES-256-GCM 加密、用商家固定 IV（16 bytes、PHP openssl_encrypt 支援）
+// 輸出格式（跟 PHP SDK 一致）：hex(base64(ciphertext) + ":::" + base64(tag))
 export function encryptInfo(plaintext: string): string {
   if (!PAYUNI_CONFIGURED) throw new Error("PayUni not configured");
   const cipher = crypto.createCipheriv(
-    "aes-256-cbc",
+    "aes-256-gcm",
     Buffer.from(HASH_KEY, "utf8"),
-    Buffer.from(HASH_IV, "utf8")
+    Buffer.from(HASH_IV, "utf8"),
+    { authTagLength: 16 }
   );
   const encrypted = Buffer.concat([
     cipher.update(plaintext, "utf8"),
     cipher.final(),
   ]);
-  return encrypted.toString("hex").toLowerCase();
+  const tag = cipher.getAuthTag();
+  // PHP openssl_encrypt with options=0 → base64-encoded output
+  const combined = `${encrypted.toString("base64")}:::${tag.toString("base64")}`;
+  return Buffer.from(combined, "utf8").toString("hex");
 }
 
-export function decryptInfo(ciphertext: string): string {
+// AES-256-GCM 解密、用商家固定 IV
+// 解析 PayUni response 的 hex(base64(cipher) + ":::" + base64(tag))
+export function decryptInfo(hexStr: string): string {
   if (!PAYUNI_CONFIGURED) throw new Error("PayUni not configured");
+  const combined = Buffer.from(hexStr, "hex").toString("utf8");
+  const parts = combined.split(":::");
+  if (parts.length !== 2) throw new Error("Invalid PayUni response format");
+  const [cipherB64, tagB64] = parts;
+  const ciphertext = Buffer.from(cipherB64, "base64");
+  const tag = Buffer.from(tagB64, "base64");
+
   const decipher = crypto.createDecipheriv(
-    "aes-256-cbc",
+    "aes-256-gcm",
     Buffer.from(HASH_KEY, "utf8"),
-    Buffer.from(HASH_IV, "utf8")
+    Buffer.from(HASH_IV, "utf8"),
+    { authTagLength: 16 }
   );
+  decipher.setAuthTag(tag);
   const decrypted = Buffer.concat([
-    decipher.update(ciphertext, "hex"),
+    decipher.update(ciphertext),
     decipher.final(),
   ]);
   return decrypted.toString("utf8");
 }
 
-// PayUni 個人版實際用：SHA256(KEY + ENC + IV) 純 concat、大寫
-// 之前用 "HashKey=...&...&HashIV=..." 是另一版本格式、會被 reject (DEF01007)
-// 用純 concat 可通過 hash 驗證（reject code 變 DEF01002 表示通過 hash 進到下個檢查）
+// SHA256(KEY + EncryptInfo + IV) 大寫
 export function makeHashInfo(encryptedStr: string): string {
   const raw = `${HASH_KEY}${encryptedStr}${HASH_IV}`;
   return crypto
@@ -66,7 +82,10 @@ export function makeHashInfo(encryptedStr: string): string {
     .toUpperCase();
 }
 
-export function verifyHashInfo(encryptedStr: string, hashFromPayUni: string): boolean {
+export function verifyHashInfo(
+  encryptedStr: string,
+  hashFromPayUni: string
+): boolean {
   try {
     return makeHashInfo(encryptedStr) === hashFromPayUni.toUpperCase();
   } catch {
@@ -74,8 +93,7 @@ export function verifyHashInfo(encryptedStr: string, hashFromPayUni: string): bo
   }
 }
 
-// PHP http_build_query 風格 — PayUni 是 PHP-based、空格要用 `+` 不是 `%20`
-// 之前用 encodeURIComponent 直接編碼會讓 PayUni 解密後 parse 失敗（DEF01007 根因）
+// PHP http_build_query 風格 — 空格用 `+` 不是 `%20`
 function buildQuery(params: Record<string, string | number>): string {
   return Object.entries(params)
     .map(([k, v]) => {
@@ -118,7 +136,7 @@ export function buildOrderPayload(opts: OrderOpts): OrderFormPayload {
     NotifyURL: opts.notifyUrl,
     BackURL: opts.backUrl ?? opts.returnUrl,
     UsrMail: opts.userEmail ?? "",
-    API1: "credit", // 信用卡
+    API1: "credit",
   };
 
   const plaintext = buildQuery(order);
@@ -136,7 +154,7 @@ export function buildOrderPayload(opts: OrderOpts): OrderFormPayload {
   };
 }
 
-// 解析 PayUni 回傳的 EncryptInfo（無論 webhook 或 return URL）
+// 解析 PayUni 回傳（webhook / return URL）
 export function parsePayUniResponse(
   encryptedStr: string,
   hashStr: string
