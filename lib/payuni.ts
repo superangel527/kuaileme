@@ -136,7 +136,11 @@ export function buildOrderPayload(opts: OrderOpts): OrderFormPayload {
     NotifyURL: opts.notifyUrl,
     BackURL: opts.backUrl ?? opts.returnUrl,
     UsrMail: opts.userEmail ?? "",
-    API1: "credit",
+    // 只開信用卡 + Apple Pay
+    // 關掉 Google Pay（iOS Safari OR_BIBED_15 錯誤）
+    // 關掉 ATM / CVS / BARCODE（這些是「之後再付」、對 3 分鐘聊天室不適用）
+    // CREDIT 大寫、PayUni 才認；小寫 API1 會被忽略
+    API1: "CREDIT,APPLEPAY",
   };
 
   const plaintext = buildQuery(order);
