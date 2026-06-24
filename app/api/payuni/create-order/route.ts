@@ -32,13 +32,33 @@ export async function POST(req: NextRequest) {
   let nickname = "";
   let topic = "";
   let mode: "initial" | "extend" = "initial";
+  let isInAppBrowser = false;
   try {
     const body = await req.json();
     nickname = typeof body?.nickname === "string" ? body.nickname.slice(0, 16) : "";
     topic = typeof body?.topic === "string" ? body.topic.slice(0, 30) : "";
     if (body?.mode === "extend") mode = "extend";
+    if (body?.isInAppBrowser === true) isInAppBrowser = true;
   } catch {
     /* empty body OK */
+  }
+
+  // 後端 UA 偵測當保險（前端 flag 沒傳 / 被改）
+  if (!isInAppBrowser) {
+    const ua = (req.headers.get("user-agent") || "").toLowerCase();
+    if (
+      ua.includes("line/") ||
+      ua.includes("instagram") ||
+      ua.includes("fbav") ||
+      ua.includes("fban") ||
+      ua.includes("fb_iab") ||
+      ua.includes("messenger") ||
+      ua.includes("tiktok") ||
+      ua.includes("musical_ly") ||
+      ua.includes("micromessenger")
+    ) {
+      isInAppBrowser = true;
+    }
   }
 
   // 續聊用 ext 前綴、首次付款用 kl 前綴；return route 偵測前綴決定 redirect
@@ -55,12 +75,14 @@ export async function POST(req: NextRequest) {
       notifyUrl: `${SITE_URL}/api/payuni/notify`,
       backUrl: mode === "extend" ? `${SITE_URL}/chat` : `${SITE_URL}/`,
       userEmail: "support@superangel527.com", // 預設客服 email（PayUni 有些情境要求必填）
+      isInAppBrowser, // 控制 API1：true → 只 CREDIT、false → CREDIT,APPLEPAY
     });
     // diagnostic log — Netlify Functions log 可看
     console.log("[payuni/create-order]", {
       mode,
       orderNo,
       amount: PRICE,
+      isInAppBrowser,
       actionUrl: payload.actionUrl,
       returnUrl: `${SITE_URL}/api/payuni/return`,
     });

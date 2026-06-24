@@ -5,6 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import BottomGlow from "@/components/BottomGlow";
 import { pickRandomCharacters, type Character } from "@/lib/characters";
 import Avatar from "@/components/Avatar";
+import {
+  detectInAppBrowser,
+  inAppBrowserDisplayName,
+  openInExternalBrowserHint,
+  type InAppBrowserKind,
+} from "@/lib/webview";
 
 const TEASER_LINES = [
   "她是不是根本不知道自己很有魅力？",
@@ -56,6 +62,9 @@ export default function PayPage() {
   const [ghosts, setGhosts] = useState<
     Array<{ text: string; left: number; top: number; delay: number; dur: number }>
   >([]);
+  // LINE / IG / FB 等內建瀏覽器偵測 — Apple Pay 在這些 webview 會出包
+  const [inAppKind, setInAppKind] = useState<InAppBrowserKind>(null);
+  const [copiedHint, setCopiedHint] = useState(false);
   // 付款 loading 過場的 timeouts — unmount 時要清掉
   const payTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -79,6 +88,8 @@ export default function PayPage() {
     }
     setPreviewChars(pickRandomCharacters(4));
     setOnlineCount(1800 + Math.floor(Math.random() * 600));
+    // mount 時偵測 in-app browser
+    setInAppKind(detectInAppBrowser());
     // 從 5 句池隨機抽 4 句
     setLoadingTexts(
       [...LOADING_TEXT_POOL].sort(() => Math.random() - 0.5).slice(0, 4)
@@ -143,7 +154,12 @@ export default function PayPage() {
         const resp = await fetch("/api/payuni/create-order", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ nickname: nick, topic }),
+          body: JSON.stringify({
+            nickname: nick,
+            topic,
+            // in-app browser 環境 → API 端會強制只開信用卡（關掉 Apple Pay）
+            isInAppBrowser: !!inAppKind,
+          }),
         });
         const data = await resp.json();
 
@@ -366,6 +382,39 @@ export default function PayPage() {
       >
         ‹ 返回
       </button>
+
+      {/* In-app browser 警告：Apple Pay 在 LINE/IG/FB 內建瀏覽器會失敗、強烈建議改用 Safari/Chrome */}
+      {inAppKind && (
+        <div className="max-w-md mx-auto w-full mb-3 rounded-2xl border border-amber-400/40 bg-amber-500/[0.08] px-4 py-3 text-[13px] text-amber-100/95 leading-relaxed">
+          <div className="flex items-start gap-2">
+            <span className="text-[16px] mt-px">⚠️</span>
+            <div className="flex-1">
+              <div className="font-semibold text-amber-100">
+                偵測到你正在用 {inAppBrowserDisplayName(inAppKind)} 內建瀏覽器
+              </div>
+              <div className="mt-1 text-amber-100/85">
+                為了付款順利、{openInExternalBrowserHint(inAppKind)}、再開啟我們網址。
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (typeof window === "undefined") return;
+                  try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    setCopiedHint(true);
+                    setTimeout(() => setCopiedHint(false), 2000);
+                  } catch {
+                    /* clipboard 沒權限就算了 */
+                  }
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/15 border border-amber-300/30 text-[12px] text-amber-100 active:scale-95 transition"
+              >
+                {copiedHint ? "✓ 已複製" : "📋 複製連結"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-md mx-auto w-full flex flex-col">
         {/* Logo — 放大、貼近返回鍵 */}

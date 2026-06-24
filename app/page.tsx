@@ -50,6 +50,38 @@ const QUICK_TOPICS = [
   { emoji: "🪞", text: "我看起來會老嗎？" },
 ];
 
+// 付款失敗時、被 /api/payuni/return 踢回首頁、URL 帶 ?error=...
+// 不同 error 給不同說明 + 同樣指向客服
+type PayErrorInfo = { title: string; detail: string };
+function parsePayError(search: string): PayErrorInfo | null {
+  if (!search) return null;
+  const params = new URLSearchParams(search);
+  const err = params.get("error");
+  if (!err) return null;
+  const status = params.get("status") || "";
+  const msg = params.get("msg") || "";
+
+  if (err === "payment_invalid") {
+    return {
+      title: "付款驗證失敗",
+      detail: "PayUni 回傳的簽章對不上、付款未完成。如果你的卡或 Apple Pay 顯示已扣款、通常 7 天內銀行會自動取消，不會真的扣款。",
+    };
+  }
+  if (err === "payment_failed") {
+    return {
+      title: "付款未完成",
+      detail: `付款流程沒走完（${status || "unknown"}${msg ? "・" + msg : ""}）。如果你的卡或 Apple Pay 顯示已扣款、通常 7 天內銀行會自動取消。`,
+    };
+  }
+  if (err === "payuni_not_configured" || err === "bad_response") {
+    return {
+      title: "系統設定問題",
+      detail: "付款服務暫時無法使用、請稍後再試或聯絡客服。",
+    };
+  }
+  return null;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [topic, setTopic] = useState("");
@@ -57,10 +89,22 @@ export default function HomePage() {
   const [going, setGoing] = useState(false);
   // 兩個聊天室殘影（mount 後才產，避免 hydration mismatch）
   const [ghosts, setGhosts] = useState<{ text: string }[]>([]);
+  // 付款被踢回的錯誤橫幅（從 URL 讀 ?error=...）
+  const [payError, setPayError] = useState<PayErrorInfo | null>(null);
 
   useEffect(() => {
     const shuffled = [...GHOST_SNIPPETS].sort(() => Math.random() - 0.5);
     setGhosts([{ text: shuffled[0] }, { text: shuffled[1] }]);
+    // 讀 URL ?error=...、有的話顯示客服橫幅；讀完後 replaceState 清掉 query
+    // 避免使用者重整一直看到（也避免分享連結帶錯誤）
+    if (typeof window !== "undefined") {
+      const info = parsePayError(window.location.search);
+      if (info) {
+        setPayError(info);
+        const url = window.location.pathname;
+        window.history.replaceState({}, "", url);
+      }
+    }
   }, []);
 
   const canEnter =
@@ -82,6 +126,39 @@ export default function HomePage() {
   return (
     <main className="relative min-h-screen-safe px-5 pt-4 pb-8 overflow-hidden">
       <BottomGlow />
+
+      {/* 付款異常橫幅 — 從 PayUni return 踢回時顯示、避免使用者誤以為扣款成功又重刷 */}
+      {payError && (
+        <div className="max-w-md mx-auto w-full mb-4 rounded-2xl border border-rose-400/40 bg-rose-500/[0.08] px-4 py-3.5 text-rose-100/95 leading-relaxed">
+          <div className="flex items-start gap-2">
+            <span className="text-[18px] mt-0.5">⚠️</span>
+            <div className="flex-1">
+              <div className="text-[14.5px] font-semibold text-rose-50">
+                {payError.title}
+              </div>
+              <div className="mt-1 text-[12.5px] text-rose-100/85">
+                {payError.detail}
+              </div>
+              <div className="mt-2 text-[12px] text-rose-100/85">
+                需要協助請聯絡：
+                <a
+                  href="mailto:support@superangel527.com"
+                  className="ml-1 underline underline-offset-2 text-rose-50 font-medium"
+                >
+                  support@superangel527.com
+                </a>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPayError(null)}
+                className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-rose-400/15 border border-rose-300/30 text-[11.5px] text-rose-50 active:scale-95 transition"
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-md mx-auto">
         {/* Logo — 再放大、上方空位收緊 */}

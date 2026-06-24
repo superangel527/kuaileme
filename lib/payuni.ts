@@ -112,6 +112,8 @@ export type OrderOpts = {
   notifyUrl: string;
   backUrl?: string;
   userEmail?: string;
+  // LINE/IG/FB 內建瀏覽器 → 強制只開信用卡（關 Apple Pay、避免 token callback 被攔）
+  isInAppBrowser?: boolean;
 };
 
 export type OrderFormPayload = {
@@ -136,11 +138,11 @@ export function buildOrderPayload(opts: OrderOpts): OrderFormPayload {
     NotifyURL: opts.notifyUrl,
     BackURL: opts.backUrl ?? opts.returnUrl,
     UsrMail: opts.userEmail ?? "",
-    // 只開信用卡 + Apple Pay
-    // 關掉 Google Pay（iOS Safari OR_BIBED_15 錯誤）
-    // 關掉 ATM / CVS / BARCODE（這些是「之後再付」、對 3 分鐘聊天室不適用）
+    // 預設：信用卡 + Apple Pay
+    // 關掉 Google Pay（iOS Safari OR_BIBED_15）、ATM / CVS / BARCODE（對 3 分鐘聊天室不適用）
     // CREDIT 大寫、PayUni 才認；小寫 API1 會被忽略
-    API1: "CREDIT,APPLEPAY",
+    // 例外：LINE/IG/FB 內建瀏覽器 → 只開 CREDIT、Apple Pay 在 webview 會 callback 失敗
+    API1: opts.isInAppBrowser ? "CREDIT" : "CREDIT,APPLEPAY",
   };
 
   const plaintext = buildQuery(order);
