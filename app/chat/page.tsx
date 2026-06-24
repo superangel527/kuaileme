@@ -191,7 +191,14 @@ export default function ChatPage() {
   const userHistoryRef = useRef<string[]>([]); // 使用者打字累積、給 AI 推測角色用
 
   const scrollEndRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  // 使用者主動往上滾時、暫停 auto-scroll、顯示「⬇ 新訊息」浮動鈕
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
+  const [pendingNewCount, setPendingNewCount] = useState(0);
   const shareCardRef = useRef<HTMLDivElement | null>(null);
+  // 離開按鈕：第一次按 → 顯示確認、第二次或按確認鈕才真離開（防誤觸）
+  const [confirmingExit, setConfirmingExit] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [savingImage, setSavingImage] = useState(false);
   // 保存圖片結果訊息
   // null / "success" / "ios"（已開新分頁、提示長按）/ "longpress"（LINE WebView、提示長按預覽圖）/ "error"
@@ -571,11 +578,37 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, ended]);
 
-  // 自動 scroll
+  // 自動 scroll — 使用者主動往上看時暫停、改累積 pendingNewCount
   useEffect(() => {
+    if (userScrolledUp) {
+      // 使用者在看舊訊息、累計新訊息數（fading 結尾不算進、避免錯亂）
+      if (!ended) setPendingNewCount((c) => c + 1);
+      return;
+    }
     const behavior: ScrollBehavior = items.length < 18 ? "auto" : "smooth";
     scrollEndRef.current?.scrollIntoView({ behavior, block: "end" });
-  }, [items.length, typings.length, ended]);
+  }, [items.length, typings.length, ended, userScrolledUp]);
+
+  // 滾動偵測：距底 > 200px → userScrolledUp=true、回到底 → false 並清計數
+  // 用 onScroll 不用 IntersectionObserver、簡單夠用
+  const handleScroll = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const isUp = distFromBottom > 200;
+    setUserScrolledUp((prev) => {
+      // 從上滾回底時、清掉 pending count
+      if (prev && !isUp) setPendingNewCount(0);
+      return isUp;
+    });
+  };
+
+  // 「⬇ N 則新訊息」浮動鈕按下 → 跳回底
+  const handleJumpToBottom = () => {
+    setUserScrolledUp(false);
+    setPendingNewCount(0);
+    scrollEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
 
   // 愛心慢慢增加
   useEffect(() => {
@@ -986,7 +1019,32 @@ export default function ChatPage() {
     }
   };
 
-  const handleHome = () => router.push("/");
+  // 離開按鈕：第一次按 → 顯示「確認離開？」、3 秒內再按或點確認鈕才真離開
+  // 防止使用者滑動時誤觸 ‹ 按鈕、聊到一半被踢出
+  // ended 後（聊天已結束）不需確認、直接回首頁
+  const handleHome = () => {
+    if (ended) {
+      router.push("/");
+      return;
+    }
+    if (confirmingExit) {
+      router.push("/");
+      return;
+    }
+    setConfirmingExit(true);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    confirmTimerRef.current = setTimeout(() => {
+      setConfirmingExit(false);
+      confirmTimerRef.current = null;
+    }, 4000);
+  };
+
+  // unmount 清確認 timer
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
 
   return (
     <main className="relative flex flex-col h-screen-safe overflow-hidden">
@@ -996,10 +1054,14 @@ export default function ChatPage() {
         <div className="flex items-center justify-between max-w-md mx-auto">
           <button
             onClick={handleHome}
-            aria-label="離開"
-            className="text-white/55 hover:text-white text-[20px] leading-none w-8 h-8 flex items-center justify-center -ml-1 active:scale-90 transition"
+            aria-label={confirmingExit ? "再按一次離開聊天室" : "離開"}
+            className={`leading-none flex items-center justify-center -ml-1 active:scale-90 transition rounded-full ${
+              confirmingExit
+                ? "px-3 h-8 bg-rose-500/20 border border-rose-400/40 text-rose-100 text-[12px] font-semibold whitespace-nowrap"
+                : "text-white/55 hover:text-white text-[20px] w-8 h-8"
+            }`}
           >
-            ‹
+            {confirmingExit ? "再按一次離開" : "‹"}
           </button>
           <div className="flex-1 text-center">
             <div className="text-[14.5px] font-semibold text-white tracking-wide">
@@ -1013,8 +1075,12 @@ export default function ChatPage() {
         </div>
       </header>
 
-      {/* 訊息流 */}
-      <div className="flex-1 overflow-y-auto chat-scroll">
+      {/* 訊息流 — overscroll-contain 已在 .chat-scroll、防止上滑冒泡到 WebView */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto chat-scroll relative"
+      >
         <div className="max-w-md mx-auto px-4 py-4 space-y-3">
           {plan?.topic && (
             <div className="mb-2 rounded-2xl bg-gradient-to-br from-glow-pink/[0.08] via-glow-violet/[0.08] to-glow-cyan/[0.06] border border-white/[0.1] p-3.5">
@@ -1171,6 +1237,19 @@ export default function ChatPage() {
           <div ref={scrollEndRef} className="h-2" />
         </div>
       </div>
+
+      {/* 浮動「⬇ 新訊息」鈕 — 使用者主動往上看時才出現
+          點了 → 跳回底、清計數。位置在 input 上方 14px */}
+      {userScrolledUp && !ended && (
+        <button
+          onClick={handleJumpToBottom}
+          className="absolute left-1/2 -translate-x-1/2 bottom-[88px] z-20 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-glow-pink/95 via-glow-violet/95 to-glow-cyan/95 text-white text-[13px] font-semibold shadow-[0_8px_24px_-6px_rgba(255,95,162,0.55)] active:scale-95 transition"
+          aria-label="跳到最新訊息"
+        >
+          <span>⬇</span>
+          {pendingNewCount > 0 ? `${pendingNewCount} 則新訊息` : "回到最新"}
+        </button>
+      )}
 
       {/* 底部 — 結束時隱藏。fading 階段也 disable、避免時間線倒退 */}
       {!ended && (

@@ -73,6 +73,11 @@ body {
 .chat-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+/* 防止聊天室滾動冒泡到 LINE/IG WebView 觸發關閉手勢 */
+.chat-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* iOS Safari 100vh 修正 */
 @supports (height: 100dvh) {
