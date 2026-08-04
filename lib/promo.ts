@@ -64,6 +64,15 @@ export async function redeemCode(inputCode: string): Promise<RedeemResult> {
   }
 
   const codes = parseCodes();
+  // 如果 codes 是空、代表 Netlify PROMO_CODES 環境變數沒設好或沒 deploy
+  // 給明確錯誤、Angel 一看就知道要去 Netlify 檢查
+  if (Object.keys(codes).length === 0) {
+    return {
+      ok: false,
+      error: "系統尚未設定優惠碼（PROMO_CODES 環境變數未設或未部署）",
+      reason: "system_error",
+    };
+  }
   const max = codes[code];
   if (!max) {
     return { ok: false, error: "這個優惠碼不正確", reason: "invalid" };
