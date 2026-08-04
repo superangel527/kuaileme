@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@netlify/blobs": "^10.7.11",
     "html-to-image": "^1.11.13",
     "next": "^14.2.35",
     "react": "^18.3.1",

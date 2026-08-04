@@ -65,6 +65,8 @@ export default function PayPage() {
   // LINE / IG / FB 等內建瀏覽器偵測 — Apple Pay 在這些 webview 會出包
   const [inAppKind, setInAppKind] = useState<InAppBrowserKind>(null);
   const [copiedHint, setCopiedHint] = useState(false);
+  // 優惠碼 free pass — cookie kl_free_pass 存在 → 跳過 PayUni
+  const [hasFreePass, setHasFreePass] = useState(false);
   // 付款 loading 過場的 timeouts — unmount 時要清掉
   const payTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -90,6 +92,11 @@ export default function PayPage() {
     setOnlineCount(1800 + Math.floor(Math.random() * 600));
     // mount 時偵測 in-app browser
     setInAppKind(detectInAppBrowser());
+    // 讀 kl_free_pass cookie — 有值就代表首頁已通過優惠碼驗證
+    if (typeof document !== "undefined") {
+      const m = document.cookie.match(/(?:^|;\s*)kl_free_pass=([^;]+)/);
+      if (m && m[1]) setHasFreePass(true);
+    }
     // 從 5 句池隨機抽 4 句
     setLoadingTexts(
       [...LOADING_TEXT_POOL].sort(() => Math.random() - 0.5).slice(0, 4)
@@ -148,8 +155,14 @@ export default function PayPage() {
           .catch(() => {})
       : Promise.resolve();
 
-    // 走真實 PayUni 流程
-    if (paymentMode === "payuni") {
+    // 優惠碼路線：有 free pass → 消耗 cookie、走 fake mode（跳過 PayUni）
+    if (hasFreePass && typeof document !== "undefined") {
+      document.cookie = "kl_free_pass=; max-age=0; path=/";
+      // 繼續往下走 fake mode（不進 PayUni 分支）
+    }
+
+    // 走真實 PayUni 流程（有 free pass 就跳過此分支）
+    if (paymentMode === "payuni" && !hasFreePass) {
       try {
         const resp = await fetch("/api/payuni/create-order", {
           method: "POST",
@@ -494,17 +507,19 @@ export default function PayPage() {
           </ul>
         </div>
 
-        {/* 付款按鈕 */}
+        {/* 付款按鈕 — 有 free pass 顯示不同文案 */}
         <button
           onClick={handlePay}
           disabled={paying}
           className="mt-6 w-full py-5 rounded-2xl text-white text-[19px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_12px_40px_-8px_rgba(255,95,162,0.6)] active:scale-[0.98] disabled:opacity-60 transition flex items-center justify-center gap-3"
         >
-          NT$19 偷偷進聊天室
+          {hasFreePass ? "🎟️ 免費進聊天室" : "NT$19 偷偷進聊天室"}
         </button>
 
         <p className="mt-3 text-center text-[11px] text-white/40">
-          一次性付款・即時進入・無自動續訂
+          {hasFreePass
+            ? "已使用優惠碼・免費體驗一場"
+            : "一次性付款・即時進入・無自動續訂"}
         </p>
       </div>
     </main>
