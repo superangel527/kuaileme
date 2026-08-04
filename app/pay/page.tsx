@@ -67,6 +67,15 @@ export default function PayPage() {
   const [copiedHint, setCopiedHint] = useState(false);
   // 優惠碼 free pass — cookie kl_free_pass 存在 → 跳過 PayUni
   const [hasFreePass, setHasFreePass] = useState(false);
+  // 優惠碼區塊
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoBusy, setPromoBusy] = useState(false);
+  const [promoMsg, setPromoMsg] = useState<
+    | { kind: "success"; text: string }
+    | { kind: "error"; text: string }
+    | null
+  >(null);
   // 付款 loading 過場的 timeouts — unmount 時要清掉
   const payTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -118,6 +127,37 @@ export default function PayPage() {
   //   NEXT_PUBLIC_PAYMENT_MODE=payuni → 真實 PayUni（PayUni 審核通過後才設）
   //   NEXT_PUBLIC_PAYMENT_MODE=fake 或沒設 → 假流程（loading 後直接進 chat）
   const paymentMode = process.env.NEXT_PUBLIC_PAYMENT_MODE || "fake";
+
+  const handleRedeemPromo = async () => {
+    const code = promoCode.trim();
+    if (!code || promoBusy) return;
+    setPromoBusy(true);
+    setPromoMsg(null);
+    try {
+      const resp = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await resp.json();
+      if (resp.ok && data?.ok) {
+        setHasFreePass(true);
+        setPromoMsg({
+          kind: "success",
+          text: "✓ 優惠碼已生效、上面按鈕已變免費",
+        });
+      } else {
+        setPromoMsg({
+          kind: "error",
+          text: data?.error || "優惠碼驗證失敗、請確認後再試",
+        });
+      }
+    } catch {
+      setPromoMsg({ kind: "error", text: "網路異常、請稍後再試" });
+    } finally {
+      setPromoBusy(false);
+    }
+  };
 
   const handlePay = async () => {
     if (paying) return;
@@ -521,6 +561,61 @@ export default function PayPage() {
             ? "已使用優惠碼・免費體驗一場"
             : "一次性付款・即時進入・無自動續訂"}
         </p>
+
+        {/* 優惠碼區塊 — 在 NT$19 按鈕下方、標題字放大到 15px */}
+        <div className="mt-6">
+          {!promoOpen && !hasFreePass && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setPromoOpen(true)}
+                className="text-[15px] text-white/70 hover:text-white underline underline-offset-4 decoration-white/30 hover:decoration-glow-pink/60 transition font-medium py-1.5 px-3"
+              >
+                🎟️ 有優惠碼嗎？
+              </button>
+            </div>
+          )}
+          {(promoOpen || hasFreePass) && (
+            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.1] p-4">
+              <label className="text-[15px] text-white font-medium mb-2.5 block">
+                🎟️ 輸入優惠碼
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) =>
+                    setPromoCode(e.target.value.toUpperCase().slice(0, 24))
+                  }
+                  placeholder="例：ANGEL2026"
+                  disabled={promoBusy || hasFreePass}
+                  className="flex-1 rounded-xl bg-bg-deep/90 border border-white/15 px-3.5 py-3 text-[15px] text-white placeholder-white/35 focus:outline-none focus:border-glow-pink/70 transition disabled:opacity-60"
+                />
+                {!hasFreePass && (
+                  <button
+                    type="button"
+                    onClick={handleRedeemPromo}
+                    disabled={promoBusy || !promoCode.trim()}
+                    className="shrink-0 px-5 rounded-xl bg-white/[0.1] hover:bg-white/[0.16] border border-white/[0.2] text-[14px] text-white/95 font-medium active:scale-95 disabled:opacity-40 transition"
+                  >
+                    {promoBusy ? "驗證中…" : "使用"}
+                  </button>
+                )}
+              </div>
+              {promoMsg && (
+                <div
+                  className={`mt-2.5 text-[13px] leading-snug ${
+                    promoMsg.kind === "success"
+                      ? "text-glow-cyan"
+                      : "text-rose-300"
+                  }`}
+                >
+                  {promoMsg.text}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

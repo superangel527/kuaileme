@@ -91,16 +91,6 @@ export default function HomePage() {
   const [ghosts, setGhosts] = useState<{ text: string }[]>([]);
   // 付款被踢回的錯誤橫幅（從 URL 讀 ?error=...）
   const [payError, setPayError] = useState<PayErrorInfo | null>(null);
-  // 優惠碼區塊（一次性、免費玩一場）
-  const [promoOpen, setPromoOpen] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoBusy, setPromoBusy] = useState(false);
-  const [promoMsg, setPromoMsg] = useState<
-    | { kind: "success"; text: string }
-    | { kind: "error"; text: string }
-    | null
-  >(null);
-  const [promoOk, setPromoOk] = useState(false);
 
   useEffect(() => {
     const shuffled = [...GHOST_SNIPPETS].sort(() => Math.random() - 0.5);
@@ -131,40 +121,6 @@ export default function HomePage() {
       localStorage.removeItem("kl_scenario");
     }
     router.push("/pay");
-  };
-
-  const handleRedeemPromo = async () => {
-    const code = promoCode.trim();
-    if (!code || promoBusy) return;
-    setPromoBusy(true);
-    setPromoMsg(null);
-    try {
-      const resp = await fetch("/api/promo/redeem", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const data = await resp.json();
-      if (resp.ok && data?.ok) {
-        setPromoOk(true);
-        setPromoMsg({
-          kind: "success",
-          text: `✓ 優惠碼已生效、按下方按鈕免費進聊天室`,
-        });
-      } else {
-        setPromoMsg({
-          kind: "error",
-          text: data?.error || "優惠碼驗證失敗、請確認後再試",
-        });
-      }
-    } catch {
-      setPromoMsg({
-        kind: "error",
-        text: "網路異常、請稍後再試",
-      });
-    } finally {
-      setPromoBusy(false);
-    }
   };
 
   return (
@@ -355,71 +311,14 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 優惠碼區塊 — 摺疊、預設收合 */}
-        <div className="mt-4">
-          {!promoOpen && !promoOk && (
-            <button
-              type="button"
-              onClick={() => setPromoOpen(true)}
-              className="text-[12.5px] text-white/50 hover:text-white/80 underline underline-offset-2 transition"
-            >
-              有優惠碼？
-            </button>
-          )}
-          {(promoOpen || promoOk) && (
-            <div className="rounded-2xl bg-white/[0.04] border border-white/[0.1] p-3">
-              <label className="text-[12.5px] text-white/70 mb-2 block">
-                🎟️ 優惠碼（一次性、免費玩一場）
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={promoCode}
-                  onChange={(e) =>
-                    setPromoCode(e.target.value.toUpperCase().slice(0, 24))
-                  }
-                  placeholder="例：ANGEL2026"
-                  disabled={promoBusy || promoOk}
-                  className="flex-1 rounded-xl bg-bg-deep/90 border border-white/15 px-3 py-2.5 text-[14px] text-white placeholder-white/35 focus:outline-none focus:border-glow-pink/70 transition disabled:opacity-60"
-                />
-                {!promoOk && (
-                  <button
-                    type="button"
-                    onClick={handleRedeemPromo}
-                    disabled={promoBusy || !promoCode.trim()}
-                    className="shrink-0 px-4 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.15] text-[13px] text-white/90 active:scale-95 disabled:opacity-40 transition"
-                  >
-                    {promoBusy ? "驗證中…" : "使用"}
-                  </button>
-                )}
-              </div>
-              {promoMsg && (
-                <div
-                  className={`mt-2 text-[12.5px] leading-snug ${
-                    promoMsg.kind === "success"
-                      ? "text-glow-cyan"
-                      : "text-rose-300"
-                  }`}
-                >
-                  {promoMsg.text}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 主 CTA — 有 promoOk 時顯示不同文字 */}
+        {/* 主 CTA */}
         <button
           onClick={handleEnter}
           disabled={!canEnter}
-          className="mt-4 w-full py-5 rounded-2xl text-white text-[19.5px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_10px_40px_-8px_rgba(255,95,162,0.55)] active:scale-[0.98] disabled:opacity-35 disabled:shadow-none transition flex items-center justify-center gap-3"
+          className="mt-5 w-full py-5 rounded-2xl text-white text-[19.5px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_10px_40px_-8px_rgba(255,95,162,0.55)] active:scale-[0.98] disabled:opacity-35 disabled:shadow-none transition flex items-center justify-center gap-3"
         >
           <span className="flex-1 text-center pl-7">
-            {going
-              ? "正在進入聊天室…"
-              : promoOk
-              ? "免費進聊天室 🎟️"
-              : "NT$19 看他們怎麼聊你"}
+            {going ? "正在進入聊天室…" : "NT$19 看他們怎麼聊你"}
           </span>
           {!going && <ArrowRightIcon className="w-5 h-5 mr-2" />}
         </button>
