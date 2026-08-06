@@ -28,13 +28,18 @@ const FREE_PASS_TTL_MS = 30 * 60 * 1000; // 30 分鐘（夠使用者跑完 loadi
 // ─────────────────────────────────────
 
 // 讀 env、回傳 { CODE: max_uses } — 碼統一大寫
+// 支援兩種格式（可混用）：
+//   "CODE1,CODE2"           → 每個 max_uses=1（省字元、Netlify 5000 上限用）
+//   "CODE1:100,CODE2:1"     → 顯式指定 max_uses
 export function parseCodes(): Record<string, number> {
   const raw = process.env.PROMO_CODES || "";
   const out: Record<string, number> = {};
   for (const chunk of raw.split(",")) {
-    const [code, maxStr] = chunk.split(":").map((s) => s.trim());
-    if (!code || !maxStr) continue;
-    const max = parseInt(maxStr, 10);
+    const parts = chunk.split(":").map((s) => s.trim());
+    const code = parts[0];
+    const maxStr = parts[1];
+    if (!code) continue;
+    const max = maxStr ? parseInt(maxStr, 10) : 1;
     if (!Number.isFinite(max) || max <= 0) continue;
     out[code.toUpperCase()] = max;
   }
