@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, FormEvent, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
 import MicButton from "./MicButton";
 
 // 半自由互動：使用者可隨時打字、AI 群演圍繞回應
@@ -16,6 +16,38 @@ export default function ChatInputBar({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // iOS 鍵盤修：用 visualViewport API 監聽鍵盤高度、寫進 CSS var
+  // keyboard 彈出 → 表單 padding-bottom 動態撐高、textarea 不會被蓋住
+  // iOS 15+ + Safari WebView 都支援
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handler = () => {
+      // 鍵盤高度 = window 高度 - visualViewport 高度 - viewport 頂部 offset
+      const overlap = window.innerHeight - vv.height - vv.offsetTop;
+      const px = Math.max(0, Math.round(overlap));
+      document.documentElement.style.setProperty("--kb-offset", `${px}px`);
+    };
+    vv.addEventListener("resize", handler);
+    vv.addEventListener("scroll", handler);
+    handler();
+    return () => {
+      vv.removeEventListener("resize", handler);
+      vv.removeEventListener("scroll", handler);
+      document.documentElement.style.removeProperty("--kb-offset");
+    };
+  }, []);
+
+  // textarea 拿到 focus → 100ms 後 scrollIntoView，讓 input 保證進 viewport
+  const handleFocus = () => {
+    if (typeof window === "undefined") return;
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    }, 250);
+  };
 
   const handleSubmit = (e?: FormEvent) => {
     e?.preventDefault();
@@ -50,9 +82,15 @@ export default function ChatInputBar({
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
-      // 加大底部 padding、避免在 iOS 上被 home indicator / 系統手勢區誤觸
-      className="shrink-0 px-3 pt-3 pb-[max(1.25rem,calc(env(safe-area-inset-bottom)+0.5rem))] border-t border-white/5 bg-bg-deep/92 backdrop-blur-md"
+      // 底部 padding：max(基本 1.25rem, safe-area+0.5rem, keyboard 高度)
+      // --kb-offset 由 visualViewport useEffect 動態更新、鍵盤彈出時把 input 頂上去
+      className="shrink-0 px-3 pt-3 border-t border-white/5 bg-bg-deep/92 backdrop-blur-md"
+      style={{
+        paddingBottom:
+          "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem), var(--kb-offset, 0px))",
+      }}
     >
       <div className="flex items-end gap-2 max-w-md mx-auto">
         <div className="flex-1 relative">
@@ -61,6 +99,7 @@ export default function ChatInputBar({
             value={text}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
             rows={1}
             placeholder={placeholder}
             disabled={disabled}

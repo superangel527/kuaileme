@@ -39,6 +39,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: "#0a0a12",
+  // iOS 鍵盤彈出時、viewport 跟著縮 → 內容自動 reflow → input 不會被鍵盤蓋住
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
