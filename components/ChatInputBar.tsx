@@ -28,7 +28,10 @@ export default function ChatInputBar({
     const handler = () => {
       // 鍵盤高度 = window 高度 - visualViewport 高度 - viewport 頂部 offset
       const overlap = window.innerHeight - vv.height - vv.offsetTop;
-      const px = Math.max(0, Math.round(overlap));
+      const raw = Math.max(0, Math.round(overlap));
+      // iOS Safari 鍵盤上方有「候選字 bar / 工具列」約 40-60px 沒算進 visualViewport
+      // 鍵盤開時額外加 80px buffer 保證 input 明顯高於鍵盤頂邊
+      const px = raw > 0 ? raw + 80 : 0;
       document.documentElement.style.setProperty("--kb-offset", `${px}px`);
     };
     vv.addEventListener("resize", handler);
@@ -41,12 +44,14 @@ export default function ChatInputBar({
     };
   }, []);
 
-  // textarea 拿到 focus → 100ms 後 scrollIntoView，讓 input 保證進 viewport
+  // textarea 拿到 focus → 多次 scrollIntoView 保證 input 進 viewport
+  // 分 250ms / 500ms 兩發、覆蓋鍵盤動畫進行中不同時機
   const handleFocus = () => {
     if (typeof window === "undefined") return;
-    setTimeout(() => {
-      formRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-    }, 250);
+    const scroll = () =>
+      formRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    setTimeout(scroll, 250);
+    setTimeout(scroll, 550);
   };
 
   const handleSubmit = (e?: FormEvent) => {
