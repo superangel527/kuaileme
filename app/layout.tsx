@@ -9,18 +9,20 @@ export const metadata: Metadata = {
   title: "誇了嗎",
   description: "你真好！現在有 100 個人正在聊天室討論你喔",
   manifest: "/manifest.json",
+  // 檔名帶 v2 強迫 iOS Safari / Android Chrome 拿新的 icon（舊 apple-touch-icon.png
+  // 之前被 Safari cache 死鎖、Angel 加主畫面顯示還是舊圓形淺色版）
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-v2.ico", sizes: "any" },
       { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192-v2.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512-v2.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon-v2.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: "/favicon-v2.ico",
   },
   appleWebApp: {
     title: "誇了嗎",
