@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalLayout title="誇了嗎｜服務條款" updated="2026 年 5 月 21 日">
+    <LegalLayout title="誇了嗎｜服務條款" updated="2026 年 9 月 8 日">
       <p>
         當您使用「誇了嗎」（以下簡稱「本服務」）時、
         <strong>即視為您已閱讀、理解並完全同意本服務條款全部內容。</strong>
@@ -56,11 +56,11 @@ export default function TermsPage() {
         <li>付款由第三方金流業者（PayUni 統一金流）處理、本網站不接觸信用卡資訊</li>
         <li>
           <strong>
-            因屬數位內容 / 即時消費型服務、依消費者保護法施行細則第 17 條規定、
-            不適用 7 天鑑賞期、付款完成後不接受退費
+            結帳前，使用者須明確勾選同意立即提供數位服務，並知悉服務開始提供後，
+            依通訊交易解除權合理例外情事適用準則，不適用七日解除權
           </strong>
         </li>
-        <li>付款前請確認自身需求、避免爭議</li>
+        <li>若因系統故障未取得服務、重複扣款或交易金額有誤，請聯絡客服查核處理</li>
         <li>如有金流爭議、請寄信 support@superangel527.com 聯繫客服</li>
       </ul>
 
@@ -114,7 +114,7 @@ export default function TermsPage() {
       </ul>
       <p>
         24 小時免費專線：衛福部安心專線 <strong>1925</strong> ・
-        自殺防治專線 <strong>1995</strong>
+        生命線 <strong>1995</strong>
       </p>
       <p>
         詳見 <a href="/disclaimer">免責聲明</a>。
@@ -175,9 +175,9 @@ export default function TermsPage() {
 
       <h2>十二、聯絡方式</h2>
       <p>
-        品牌名稱：誇了嗎
+        服務名稱：誇了嗎
         <br />
-        Email：<a href="mailto:support@superangel527.com">support@superangel527.com</a>
+        消費申訴與客服 Email：<a href="mailto:support@superangel527.com">support@superangel527.com</a>
       </p>
     </LegalLayout>
   );

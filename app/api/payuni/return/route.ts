@@ -4,11 +4,13 @@
  * 使用者在 PayUni 付完款後、PayUni 把使用者導回這裡（GET 或 POST）
  * 我們驗證簽章 → 確認真的付款成功 → 設 cookie 標記「已付款」 → 跳轉到 /chat
  *
- * cookie 設好後、chat 頁的 mount useEffect 會讀 cookie、設 localStorage.kl_paid_at、走原本聊天室流程
+ * 驗證訂單後簽發 HttpOnly 通行證，聊天室與 AI API 均由伺服器驗證
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { parsePayUniResponse, PAYUNI_CONFIGURED } from "@/lib/payuni";
+import { ACCESS_COOKIE, accessCookieOptions, signAccessPass } from "@/lib/access";
+import { consumePendingOrder } from "@/lib/payuni-orders";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://kuaileme.superangel527.com";
@@ -43,9 +45,6 @@ async function handle(req: NextRequest) {
     return NextResponse.redirect(`${SITE_URL}/?error=payment_invalid`);
   }
 
-  // 完整 log 給 debug 用、之後可砍
-  console.log("[payuni/return] full data:", JSON.stringify(result.data));
-
   // 確認 Status：PayUni 個人版通常 SUCCESS = 付款成功
   const status = (result.data?.Status || "").toUpperCase();
   if (status !== "SUCCESS" && status !== "OK") {
@@ -65,25 +64,23 @@ async function handle(req: NextRequest) {
   //   "ext..." → 續聊（chat?extend=1、不重新開場、直接 +3 分鐘）
   //   "kl..."  → 首次付款（chat?paid=1、開新場）
   const orderNo = result.data?.MerTradeNo || "";
-  const isExtend = orderNo.startsWith("ext");
+  const amount = Number(result.data?.TradeAmt || 0);
+  const pending = await consumePendingOrder(orderNo, amount);
+  if (!pending || amount !== 19) {
+    console.error("[payuni/return] unknown, mismatched, expired or replayed order", { orderNo, amount });
+    return NextResponse.redirect(`${SITE_URL}/?error=payment_invalid`);
+  }
+  const isExtend = pending.mode === "extend";
   const redirectPath = isExtend
     ? `${SITE_URL}/chat?extend=1&order=${orderNo}`
     : `${SITE_URL}/chat?paid=1&order=${orderNo}`;
   const resp = NextResponse.redirect(redirectPath);
 
-  // kl_paid_at cookie — chat 頁讀取後 setLocalStorage
-  resp.cookies.set("kl_paid_at", String(Date.now()), {
-    httpOnly: false,
-    sameSite: "lax",
-    maxAge: 60 * 10, // 10 分鐘有效
-    path: "/",
-  });
-  resp.cookies.set("kl_paid_order", orderNo, {
-    httpOnly: false,
-    sameSite: "lax",
-    maxAge: 60 * 10,
-    path: "/",
-  });
+  resp.cookies.set(
+    ACCESS_COOKIE,
+    signAccessPass("paid", orderNo),
+    accessCookieOptions
+  );
 
   return resp;
 }

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalLayout title="誇了嗎｜隱私權政策" updated="2026 年 5 月 21 日">
+    <LegalLayout title="誇了嗎｜隱私權政策" updated="2026 年 9 月 8 日">
       <p>歡迎使用「誇了嗎」（以下簡稱「本服務」）。</p>
       <p>
         本政策說明我們如何蒐集、使用與保護您的資訊。
@@ -106,8 +106,9 @@ export default function PrivacyPage() {
 
       <h2>七、Cookie 與本地儲存</h2>
       <p>
-        本網站使用 Cookie 與 localStorage 提供功能與優化體驗。
-        您可透過瀏覽器設定停用、但部分功能可能因此無法正常使用。
+        本網站使用 Cookie 與 localStorage 保存付款通行狀態、暱稱、當次聊天主題與產生回應所需資料。
+        付款通行 Cookie 有效期有限；localStorage 資料會保留於使用者裝置，直到網站程式清除或使用者自行清除瀏覽資料。
+        聊天文字會傳送至 Anthropic API 以產生回應，但不會公開顯示給其他使用者。
       </p>
 
       <h2>八、未成年人使用</h2>
@@ -127,9 +128,9 @@ export default function PrivacyPage() {
 
       <h2>十、聯絡方式</h2>
       <p>
-        品牌名稱：誇了嗎
+        服務名稱：誇了嗎
         <br />
-        Email：<a href="mailto:support@superangel527.com">support@superangel527.com</a>
+        個資與客服聯絡 Email：<a href="mailto:support@superangel527.com">support@superangel527.com</a>
       </p>
     </LegalLayout>
   );

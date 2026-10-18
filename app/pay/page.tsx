@@ -48,6 +48,7 @@ const GHOST_SNIPPETS = [
 export default function PayPage() {
   const router = useRouter();
   const [paying, setPaying] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [stepIdx, setStepIdx] = useState(0); // 哪些卡片已亮起（>= idx 的會顯示）
   const [progress, setProgress] = useState(0); // 進度條 0-100
   const [nickname, setNickname] = useState("");
@@ -65,7 +66,7 @@ export default function PayPage() {
   // LINE / IG / FB 等內建瀏覽器偵測 — Apple Pay 在這些 webview 會出包
   const [inAppKind, setInAppKind] = useState<InAppBrowserKind>(null);
   const [copiedHint, setCopiedHint] = useState(false);
-  // 優惠碼 free pass — cookie kl_free_pass 存在 → 跳過 PayUni
+  // 優惠碼兌換成功後，伺服器簽發 HttpOnly 通行證
   const [hasFreePass, setHasFreePass] = useState(false);
   // 優惠碼區塊
   const [promoOpen, setPromoOpen] = useState(false);
@@ -101,11 +102,11 @@ export default function PayPage() {
     setOnlineCount(1800 + Math.floor(Math.random() * 600));
     // mount 時偵測 in-app browser
     setInAppKind(detectInAppBrowser());
-    // 讀 kl_free_pass cookie — 有值就代表首頁已通過優惠碼驗證
-    if (typeof document !== "undefined") {
-      const m = document.cookie.match(/(?:^|;\s*)kl_free_pass=([^;]+)/);
-      if (m && m[1]) setHasFreePass(true);
-    }
+    // HttpOnly 通行證只能由伺服器確認；前端無法偽造。
+    fetch("/api/access/status", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setHasFreePass(data?.authorized === true && data?.kind === "promo"))
+      .catch(() => setHasFreePass(false));
     // 從 5 句池隨機抽 4 句
     setLoadingTexts(
       [...LOADING_TEXT_POOL].sort(() => Math.random() - 0.5).slice(0, 4)
@@ -179,7 +180,7 @@ export default function PayPage() {
 
     // 先呼叫 AI prepare-session — 保留 promise、等下要 await
     // (AI 生 47 句要 5-8 秒、必須等回來才能跳 chat、不然會 fallback 池子)
-    const aiPromise: Promise<void> = topic
+    const aiPromise: Promise<void> = topic && (hasFreePass || paymentMode !== "payuni")
       ? fetch("/api/prepare-session", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -194,12 +195,6 @@ export default function PayPage() {
           })
           .catch(() => {})
       : Promise.resolve();
-
-    // 優惠碼路線：有 free pass → 消耗 cookie、走 fake mode（跳過 PayUni）
-    if (hasFreePass && typeof document !== "undefined") {
-      document.cookie = "kl_free_pass=; max-age=0; path=/";
-      // 繼續往下走 fake mode（不進 PayUni 分支）
-    }
 
     // 走真實 PayUni 流程（有 free pass 就跳過此分支）
     if (paymentMode === "payuni" && !hasFreePass) {
@@ -245,10 +240,7 @@ export default function PayPage() {
       }
     }
 
-    // 假流程：進度條 + 卡片動畫 + 等 AI 回來才跳 /chat
-    if (typeof window !== "undefined") {
-      localStorage.setItem("kl_paid_at", String(Date.now()));
-    }
+    // 免費通行證／開發模式：進度條 + 卡片動畫後進聊天室。
 
     // 進度條：先衝 15%（給使用者立刻看到啟動感），然後依卡片節奏推進
     setProgress(15);
@@ -542,16 +534,35 @@ export default function PayPage() {
               <span className="text-glow-violet">💬</span> 隨時打字告訴大家心情・他們會接話
             </li>
             <li className="flex items-center gap-2.5">
-              <span className="text-glow-cyan">🔒</span> 100% 匿名・不會留下紀錄
+              <span className="text-glow-cyan">🔒</span> 匿名使用・聊天內容不會公開
             </li>
           </ul>
         </div>
 
+        <label className="mt-5 flex items-start gap-3 rounded-2xl border border-white/[0.1] bg-white/[0.035] px-4 py-3.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(event) => setTermsAccepted(event.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 accent-fuchsia-500"
+          />
+          <span className="text-[12.5px] leading-relaxed text-white/65">
+            我已閱讀並同意
+            <a href="/terms" target="_blank" rel="noreferrer" className="mx-1 text-white/90 underline underline-offset-2">
+              服務條款
+            </a>
+            與
+            <a href="/privacy" target="_blank" rel="noreferrer" className="mx-1 text-white/90 underline underline-offset-2">
+              隱私權政策
+            </a>
+            ，並同意付款後立即提供數位服務；服務開始提供後，依適用法規不適用七日解除權。
+          </span>
+        </label>
         {/* 付款按鈕 — 有 free pass 顯示不同文案 */}
         <button
           onClick={handlePay}
-          disabled={paying}
-          className="mt-6 w-full py-5 rounded-2xl text-white text-[19px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_12px_40px_-8px_rgba(255,95,162,0.6)] active:scale-[0.98] disabled:opacity-60 transition flex items-center justify-center gap-3"
+          disabled={paying || !termsAccepted}
+          className="mt-6 w-full py-5 rounded-2xl text-white text-[19px] font-semibold tracking-wide bg-gradient-to-r from-glow-pink via-glow-violet to-glow-cyan shadow-[0_12px_40px_-8px_rgba(255,95,162,0.6)] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center gap-3"
         >
           {hasFreePass ? "🎟️ 免費進聊天室" : "NT$19 偷偷進聊天室"}
         </button>

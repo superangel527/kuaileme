@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { protectApi } from "@/lib/api-security";
 
 type GeneratedMsg = { text: string; gender: "M" | null };
 
@@ -199,6 +200,8 @@ messages:
 - {text: "真心覺得 {n} 做得很好了", gender: null}`;
 
 export async function POST(req: NextRequest) {
+  const blocked = await protectApi(req, "reactions", 30, 10 * 60 * 1000);
+  if (blocked) return blocked;
   let topic = "unknown";
   let keywords: string[] = [];
   let nickname = "";

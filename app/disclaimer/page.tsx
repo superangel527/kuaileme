@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function DisclaimerPage() {
   return (
-    <LegalLayout title="誇了嗎｜免責聲明" updated="2026 年 5 月 21 日">
+    <LegalLayout title="誇了嗎｜免責聲明" updated="2026 年 9 月 8 日">
       <p>
         「誇了嗎」為 <strong>AI 情緒陪伴與娛樂互動體驗服務</strong>。
       </p>
@@ -50,7 +50,7 @@ export default function DisclaimerPage() {
           <a href="tel:1925">1925</a>（依舊愛我）
         </li>
         <li>
-          <strong>自殺防治專線：</strong>
+          <strong>生命線：</strong>
           <a href="tel:1995">1995</a>（要救救我）
         </li>
         <li>

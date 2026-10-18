@@ -2,6 +2,17 @@
 
 > 花 NT$19，進入 100 人聊天室被瘋狂誇 3 分鐘。
 
+[線上網站](https://kuaileme.superangel527.com) · [MIT License](./LICENSE)
+
+「誇了嗎」是一個以繁體中文為主、手機優先的互動式情緒支持體驗。本儲存庫公開完整的 Next.js 應用架構，包含 AI 回應流程、付款後存取控制、PWA、內容安全邊界與 Netlify 部署設定，供華語開發者研究、改進及貢獻。
+
+## 開源維護
+
+- 維護者：[@superangel527](https://github.com/superangel527)
+- 授權：MIT
+- 歡迎透過 Issue 回報錯誤或提出功能建議，也歡迎提交 Pull Request。
+- 安全問題請勿公開揭露金鑰、付款資料或個人資料。
+
 不是 AI 工具・不是心理測驗・不是療癒 APP。
 就是一個情緒爽感的小遊戲網站。
 

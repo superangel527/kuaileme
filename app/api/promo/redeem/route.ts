@@ -10,7 +10,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStore } from "@netlify/blobs";
-import { redeemCode, signFreePass } from "@/lib/promo";
+import { redeemCode } from "@/lib/promo";
+import { ACCESS_COOKIE, accessCookieOptions, signAccessPass } from "@/lib/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
   // 檢查 PROMO_SECRET 有沒有設、沒設就給明確錯（避免產出無法驗證的 token）
   let token: string;
   try {
-    token = signFreePass(result.code);
+    token = signAccessPass("promo", result.code);
   } catch (e) {
     console.error("[promo/redeem] sign failed:", e);
     return NextResponse.json(
@@ -105,13 +106,8 @@ export async function POST(req: NextRequest) {
     code: result.code,
   });
 
-  // 30 分鐘有效、給使用者跑完後續 loading + AI prepare-session
-  resp.cookies.set("kl_free_pass", token, {
-    httpOnly: false, // 前端 pay page 要能讀 → 才能決定走 fake mode
-    sameSite: "lax",
-    maxAge: 60 * 30,
-    path: "/",
-  });
+  // HttpOnly 簽章通行證，瀏覽器 JavaScript 無法偽造或讀取。
+  resp.cookies.set(ACCESS_COOKIE, token, accessCookieOptions);
 
   return resp;
 }

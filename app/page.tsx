@@ -332,14 +332,14 @@ export default function HomePage() {
             🔒 匿名模式
           </span>
           <span className="inline-flex items-center gap-1.5 text-[13px] text-white/60">
-            🛡 不會留下紀錄
+            🛡 聊天內容不會公開
           </span>
         </div>
 
         {/* 匿名 footer 卡片 — 兩行低語 */}
         <div className="mt-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-4 py-4 text-center">
           <div className="inline-flex items-center gap-1.5 text-[14px] text-white/80 font-medium">
-            🔒 放心，這裡不會留下紀錄
+            🔒 匿名使用，內容僅用於產生當次回應
           </div>
           <p className="mt-2 text-[13px] text-white/50">
             現在，你是聊天室裡的主角
@@ -378,7 +378,7 @@ export default function HomePage() {
             >
               1925
             </a>{" "}
-            ・ 自殺防治專線{" "}
+            ・ 生命線{" "}
             <a
               href="tel:1995"
               className="text-white/60 font-medium hover:text-white/90"

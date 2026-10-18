@@ -27,6 +27,7 @@ import {
   detectScenarioByKeywords,
   type ScenarioKey,
 } from "@/lib/scenarios";
+import { protectApi } from "@/lib/api-security";
 
 const SYSTEM_PROMPT = `分類中文情緒短句到 ONE 個 key。
 
@@ -48,6 +49,8 @@ unknown = 模糊或情緒方向不明
 只回答 key 本身，不要解釋、不要加標點符號。判讀不出就回 unknown。`;
 
 export async function POST(req: NextRequest) {
+  const blocked = await protectApi(req, "classify", 20, 10 * 60 * 1000);
+  if (blocked) return blocked;
   let text = "";
   try {
     const body = await req.json();

@@ -12,12 +12,16 @@ import {
   generateOrderNo,
   PAYUNI_CONFIGURED,
 } from "@/lib/payuni";
+import { savePendingOrder } from "@/lib/payuni-orders";
+import { protectApi } from "@/lib/api-security";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://kuaileme.superangel527.com";
 const PRICE = 19;
 
 export async function POST(req: NextRequest) {
+  const limited = await protectApi(req, "create-order", 10, 10 * 60 * 1000, false);
+  if (limited) return limited;
   if (!PAYUNI_CONFIGURED) {
     return NextResponse.json(
       {
@@ -77,6 +81,7 @@ export async function POST(req: NextRequest) {
       userEmail: "support@superangel527.com", // 預設客服 email（PayUni 有些情境要求必填）
       isInAppBrowser, // 控制 API1：true → 只 CREDIT、false → CREDIT,APPLEPAY
     });
+    await savePendingOrder({ orderNo, amount: PRICE, mode, createdAt: Date.now() });
     // diagnostic log — Netlify Functions log 可看
     console.log("[payuni/create-order]", {
       mode,

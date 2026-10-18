@@ -19,6 +19,7 @@ import {
   detectScenarioByKeywords,
   type ScenarioKey,
 } from "@/lib/scenarios";
+import { protectApi } from "@/lib/api-security";
 
 type GeneratedMsg = { text: string; gender: "M" | null };
 
@@ -214,6 +215,8 @@ const SYSTEM_PROMPT = `你是聊天室開場生成器。
 }`;
 
 export async function POST(req: NextRequest) {
+  const blocked = await protectApi(req, "prepare", 6, 10 * 60 * 1000);
+  if (blocked) return blocked;
   let text = "";
   let nickname = "";
   try {
